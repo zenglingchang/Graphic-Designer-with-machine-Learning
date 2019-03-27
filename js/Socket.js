@@ -5,6 +5,10 @@ function initConnect(){
     ws.onmessage = messageHandler;
 }
 
+function sendImg(Img){
+	sendMessage(['Img',Img]);
+}
+
 function sendMessage(msgArray) {
 	var msg = JSON.stringify(msgArray);
     ws.send(msg);

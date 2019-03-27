@@ -7,24 +7,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 </head>
 <body>
-	<input type="file" id="LogoFile" name="" style="visibility: hidden;"/>
-	<input type="file" id="BackgroundFile" name="" style="visibility: hidden;"/>
+    <input type="file" id="BackgroundFile" style="visibility:hidden;">
+    <input type="file" id="LogoFile" style="visibility:hidden;">
     <div id = "head">
     <nav >
         <a class="Title">AI Graphic Designer</a>
         <ul>
-            <li><a id="Text">Add Text</a></li>
             <li><a id="Logo">Add Logo</a></li>
             <li><a id="Background">Add Background</a></li>
+            <li><a>Add Text</a></li>
+            <li><a>Choose Fonts</a></li>
         </ul>
     </nav>
 
     </div>
     <div id = "left">
-        
+		<button type="button" id="SendSrc">hit me</button> 
     </div> 
-	<script src="js/Socket.js" type="text/javascript" charset="utf-8"></script>
-	<script src="js/FileControler.js" type="text/javascript" charset="utf-8"></script>
-	<script src="js/Main.js" type="text/javascript" charset="utf-8"></script>
+    <script src="js/FileControler.js" type="text/javascript" charset="utf-8"></script>
+    <script src="js/Socket.js" type="text/javascript" charset="utf-8"></script>
+    <script src="js/Main.js" type="text/javascript" charset="utf-8"></script>
 </body>
 </html>
