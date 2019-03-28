@@ -4,6 +4,10 @@
 //
 //***********************************
 
+SrcCanvas = $("srcCanvas");
+RenderList = new Array();
+var ChooseIndex = 0;
+
 class ImageElement{
     constructor(content, x, y, width, height){
         this.type = 'img';
@@ -52,10 +56,14 @@ class TextElement{
 //***********************************
 
 
-SrcCanvas = document.getElementById("srcCanvas");
-CanvasWidth = SrcCanvas.width;
-CanvasHeight = SrcCanvas.height;
-RenderList = new Array();
+function WindowsUpdate(){
+	RenderList[0].height = CanvasHeight = SrcCanvas.height = $("dstCanvas").height = $("right").clientHeight* 0.8;
+	RenderList[0].width = CanvasWidth = SrcCanvas.width = $("dstCanvas").width = CanvasHeight * 0.75;
+	$("right").style.marginLeft = $("left").clientWidth+"px";
+	SrcCanvas.style.marginLeft = CanvasWidth *0.1 +"px";
+	$("dstCanvas").style.marginLeft = CanvasWidth * 1.2+"px";
+	CanvasUpdate();
+}
 
 function windowToCanvas(x,y) {
     var box = SrcCanvas.getBoundingClientRect();  
@@ -66,6 +74,7 @@ function windowToCanvas(x,y) {
 }
 
 function CanvasInit(){
+	RenderList.push(new ImageElement(null, 0, 0, SrcCanvas.width, SrcCanvas.height));
     SrcCanvas.onmousedown  = function (event){
         var index = 0;
         var pos = windowToCanvas(event.clientX, event.clientY);
@@ -75,7 +84,8 @@ function CanvasInit(){
                 break;
             }
         }
-        
+        ChooseIndex = index;
+		CanvasUpdate();
         if (index == 0){
             return ;
         }
@@ -89,9 +99,9 @@ function CanvasInit(){
             RenderList[index].move(x,y);
             CanvasUpdate();
         };
-        SrcCanvas.onmouseup = function () {
+        $("right").onmouseup = function () {
             SrcCanvas.onmousemove = Oldmove;
-            SrcCanvas.onmouseup = null;
+            $("right").onmouseup = null;
             SrcCanvas.style.cursor = 'default';
         };
     }
@@ -107,17 +117,42 @@ function CanvasInit(){
         }
         
         if (index == 0){
-            SrcCanvas.style.cursor = 'default';
+            SrcCanvas.style.cursor = 'e-resize';
             return ;
         }
         SrcCanvas.style.cursor = 'move';
     };
 }
+
 //***********************************
 //
 // function 
 //
 //***********************************
+function DrawChosenRect(ctx, e){
+	ctx.lineWidth = 3;
+	ctx.beginPath();
+	ctx.setLineDash([10,5]);
+	ctx.strokeStyle = '#666666';
+	ctx.moveTo(e.x, e.y);
+	ctx.lineTo(e.x + e.width, e.y);
+	ctx.lineTo(e.x+e.width, e.y+e.height);
+	ctx.lineTo(e.x, e.y + e.height);
+	ctx.lineTo(e.x, e.y);
+	ctx.stroke();
+  ctx.setLineDash([]);
+	ctx.strokeStyle = "black";
+	TempArray = [[e.x, e.y], [e.x+e.width/2, e.y], [e.x+e.width, e.y], 
+	 [e.x, e.y + e.height/2], [e.x+e.width, e.y+e.height2],
+	[e.x, e.y+e.height], [e.x+e.width/2, e.y+e.height], [e.x+e.width, e.y+e.height]];
+	for(var i=0; i<TempArray.length; i++){
+		ctx.beginPath();
+		ctx.arc(TempArray[i][0], TempArray[i][1], 5, 0, Math.PI*2, true);
+		ctx.fillStyle = "white";
+		ctx.fill();
+    ctx.stroke();
+	}
+}
 
 function RenderListSwap(i, j){
     [RenderList[i],RenderList[j]] = [RenderList[j],RenderList[i]]
@@ -128,9 +163,15 @@ function CanvasUpdate(){
     ctx.clearRect(0,0,CanvasWidth,CanvasHeight);
     RenderList.forEach( function(e, i){
         if (e.type == "img"){
+			if (e.content == null){
+				return ;
+			}
             ctx.drawImage(e.content, e.x, e.y, e.width, e.height);
         }
     })
+	if (ChooseIndex != 0){
+		DrawChosenRect(ctx, RenderList[ChooseIndex]);
+	}
 }
 
 
@@ -151,7 +192,8 @@ function CanvasClear(CanvasName){
 }
 
 function DrawBackgroud(CanvasName, Img){
-    AddImageElement(Img, 0, 0, CanvasWidth, CanvasHeight);
+	RenderList[0].content = Img;
+	CanvasUpdate();
 }
 
 function DrawText(CanvasName, Text){

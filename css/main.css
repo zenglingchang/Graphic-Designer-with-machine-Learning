@@ -61,8 +61,8 @@ html, body {
 #right{
     width: 75%;
     height: 100%;
+	border-left: 1px solid #e1e4e8;
     position:absolute;
-    right:0;
 }
 
 #srcCanvas{
@@ -70,8 +70,8 @@ html, body {
     border-bottom: 1px solid #e1e4e8;
     border-right: 1px solid #c1c4c8;
     border-left: 1px solid #d1d4d8;
-    margin-left: 40px;
-    margin-top: 100px;
+    margin-left: 1%;
+    margin-top: 5%;
     position: absolute;
 }
 
@@ -80,8 +80,8 @@ html, body {
     border-bottom: 1px solid #e1e4e8;
     border-right: 1px solid #c1c4c8;
     border-left: 1px solid #d1d4d8;
-    margin-left: 700px;
-    margin-top: 100px;
+    margin-left: 13%;
+    margin-top: 5%;
     position: absolute;
 }
 
