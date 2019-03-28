@@ -13,10 +13,11 @@
     <nav >
         <a class="Title">AI Graphic Designer</a>
         <ul>
+            <li><input id="TextInput" type="text"></li>
+            <li><a>Add Text</a></li>
             <li><a id="Logo">Add Logo</a></li>
             <li><a id="Background">Add Background</a></li>
-            <li><a>Add Text</a></li>
-            <li><a>Choose Fonts</a></li>
+            <li><a id="Reset">Reset</a></li>
         </ul>
     </nav>
 
@@ -24,6 +25,11 @@
     <div id = "left">
 		<button type="button" id="SendSrc">hit me</button> 
     </div> 
+    <div id = "right">
+        <canvas id="srcCanvas" width="468" height="648"> </canvas>
+        <canvas id="dstCanvas" width="468" height="648"> </canvas>
+    </div>
+    <script src="js/Canvas.js" type="text/javascript" charset="utf-8"></script>
     <script src="js/FileControler.js" type="text/javascript" charset="utf-8"></script>
     <script src="js/Socket.js" type="text/javascript" charset="utf-8"></script>
     <script src="js/Main.js" type="text/javascript" charset="utf-8"></script>

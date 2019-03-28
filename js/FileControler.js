@@ -3,10 +3,15 @@ function AddBackgroud(e){
 	if(file){
 		var reader = new FileReader();
 		reader.onload = function ( event ){
-			var txt = event.target.result;
+            var image = new Image(); 
+            image.onload = function(){
+                DrawBackgroud('srcCanvas', image);
+                document.getElementById('BackgroundFile').value = null;
+            }
+            image.src = event.target.result;
 		}
 	}
-	reader.readAsBinaryString(file);
+	reader.readAsDataURL(file);
 }
 
 function AddLogo(e){
@@ -14,37 +19,17 @@ function AddLogo(e){
 	if(file){
 		var reader = new FileReader();
 		reader.onload = function ( event ){
-			var txt = event.target.result;
-			console.log(txt);
+            var image = new Image();
+            image.onload = function(){
+                DrawLogo('srcCanvas', image);
+                document.getElementById('LogoFile').value = null;
+            }
+            image.src = event.target.result;
+
 		}
 	}
 	reader.readAsDataURL(file);
 }
-
-function SendLogo(){
-	var file = document.getElementById('LogoFile').files[0];
-	if(file){
-		var reader = new FileReader();
-		reader.onload = function ( event ){
-			var txt = event.target.result;
-			sendImg(txt);
-		}
-	reader.readAsDataURL(file);
-	}
-}
-
-function SendBackgroud(){
-	var file = document.getElementById('BackgroundFile').files[0];
-	if(file){
-		var reader = new FileReader();
-		reader.onload = function ( event ){
-			var txt = event.target.result;
-			sendImg(txt);
-		}
-	reader.readAsDataURL(file);
-	}
-}
-
 
 function FileHandlerInit(){
 	document.getElementById('SendSrc').onclick = function(){
@@ -52,7 +37,6 @@ function FileHandlerInit(){
 		SendBackgroud();
 	};
 	document.getElementById('Logo').onclick = function(){
-		console.log('click logo!');
 		document.getElementById('LogoFile').click();
 	};
 	document.getElementById('Background').onclick = function(){

@@ -56,5 +56,37 @@ html, body {
     height: 100%;
     border-bottom: 1px solid #e1e4e8;
     border-right: 1px solid #e1e4e8;
+    position:absolute;
+}
+#right{
+    width: 75%;
+    height: 100%;
+    position:absolute;
+    right:0;
 }
 
+#srcCanvas{
+    border-top: 1px solid #a1a4a8;
+    border-bottom: 1px solid #e1e4e8;
+    border-right: 1px solid #c1c4c8;
+    border-left: 1px solid #d1d4d8;
+    margin-left: 40px;
+    margin-top: 100px;
+    position: absolute;
+}
+
+#dstCanvas{
+    border-top: 1px solid #a1a4a8;
+    border-bottom: 1px solid #e1e4e8;
+    border-right: 1px solid #c1c4c8;
+    border-left: 1px solid #d1d4d8;
+    margin-left: 700px;
+    margin-top: 100px;
+    position: absolute;
+}
+
+#TextInput {
+    width: 240px;
+    margin-right: 16px;
+    font-size: 16px;
+}

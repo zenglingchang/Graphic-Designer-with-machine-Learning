@@ -1,6 +1,11 @@
 function Init(){
+    CanvasInit();
+	ConnectInit();
 	FileHandlerInit();
-	initConnect();
-	sendMessage(['fsdfad']);
+    document.getElementById('Reset').onclick = function() {
+        CanvasClear('srcCanvas');
+        CanvasClear('dstCanvas');
+    }
+
 }
 Init();
