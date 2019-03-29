@@ -5,7 +5,7 @@ function AddBackgroud(e){
 		reader.onload = function ( event ){
             var image = new Image(); 
             image.onload = function(){
-                DrawBackgroud('srcCanvas', image);
+                DrawBackgroud(image);
                 document.getElementById('BackgroundFile').value = null;
             }
             image.src = event.target.result;
@@ -21,7 +21,7 @@ function AddLogo(e){
 		reader.onload = function ( event ){
             var image = new Image();
             image.onload = function(){
-                DrawLogo('srcCanvas', image);
+                DrawLogo(image);
                 document.getElementById('LogoFile').value = null;
             }
             image.src = event.target.result;

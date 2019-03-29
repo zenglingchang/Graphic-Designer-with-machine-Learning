@@ -3,12 +3,7 @@ function Init(){
     ConnectInit();
     FileHandlerInit();
     document.getElementById('Reset').onclick = function() {
-        CanvasClear('srcCanvas');
-        CanvasClear('dstCanvas');
+        ResetCanvas();
     }
-	WindowsUpdate();
-	window.onresize= function(){
-		WindowsUpdate();
-	};
 }
 Init();

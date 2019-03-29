@@ -1,85 +1,190 @@
 //***********************************
 //
+// Static var
+//
+//***********************************
+
+RenderList       = new Array();
+var CanvasX      = 0;
+var CanvasY      = 0;
+var CanvasHeight = 40; 
+var CanvasWidth  = 30;
+DrectionCursor   = ["nw-resize", "n-resize", "ne-resize", "w-resize", "e-resize", "sw-resize", "s-resize", "se-resize", "move"];    
+var ChooseIndex  = 0;
+
+//***********************************
+//
 // class ImageElement and TextElement
 //
 //***********************************
 
-SrcCanvas = $("srcCanvas");
-RenderList = new Array();
-var ChooseIndex = 0;
-
-class ImageElement{
-    constructor(content, x, y, width, height){
-        this.type = 'img';
-        this.content = content;
+class Element{
+    constructor(x, y, width, height){
         this.x = x;
         this.y = y;
+        this.width = width;
+        this.height = height;
+    }
+    
+    InsideRect(MouseX, MouseY){
+        return  this.x - 5  < MouseX && MouseX  <  this.width + this.x + 5 && this.y  - 5 < MouseY && MouseY < this.height + this.y + 5;
+    }
+    
+    GetDirection(MouseX, MouseY){
+        var i = 0;
+        TempArray = this.GetEightDirection();
+        for( ; i<TempArray.length ; i++){
+            if( (TempArray[i][0] - MouseX)**2 + (TempArray[i][1] - MouseY)**2 < 50)
+                break;
+        }
+        return DrectionCursor[i];
+    }
+    
+    DirectFunction(Direction, OffsetX, OffsetY){
+        switch (Direction) {
+            case "move":
+                this.x += OffsetX;
+                this.y += OffsetY;
+                break;
+            case "nw-resize":
+                this.x += OffsetX;
+                this.y += OffsetY;
+                this.width -= OffsetX;
+                this.height -= OffsetY;
+                break;
+            case "n-resize":
+                this.y += OffsetY;
+                this.height -= OffsetY;
+                break;
+            case "ne-resize":
+                this.y += OffsetY;
+                this.width += OffsetX;
+                this.height -= OffsetY;
+                break;
+            case "w-resize":
+                this.x += OffsetX;
+                this.width -= OffsetX;
+                break;
+            case "e-resize":
+                this.width += OffsetX;
+                break;
+            case "sw-resize":
+                this.x += OffsetX;
+                this.width -= OffsetX;
+                this.height += OffsetY;
+                break;
+            case "s-resize":
+                this.height += OffsetY;
+                break;
+            case "se-resize":
+                this.height += OffsetY;
+                this.width += OffsetX;
+                break;
+        }
+        this.width  =  (this.width < 10) ? 10: this.width;
+        this.height = (this.height < 10) ? 10: this.height;
+    }
+    
+    GetEightDirection(){
+        return [[this.x, this.y], [this.x+this.width/2, this.y], [this.x+this.width, this.y], 
+            [this.x, this.y + this.height/2], [this.x+this.width, this.y+this.height/2],
+            [this.x, this.y+this.height], [this.x+this.width/2, this.y+this.height], [this.x+this.width, this.y+this.height]];
+    }
+    
+}
+
+class ImageElement extends Element{
+    constructor(content, x, y, width, height){
+        super(x, y, width, height);
+        this.type = 'img';
+        this.content = content;
         if (height == 0 || width == 0){
             this.height = content.height;
             this.width = content.width;
         }
-        else{
-            this.height = height;
-            this.width = width;
+    }
+    
+    GetDirection(MouseX, MouseY){
+        var i = 0;
+        TempArray = this.GetEightDirection();
+        for( ; i<TempArray.length ; i++){
+            if( (TempArray[i][0] - MouseX)**2 + (TempArray[i][1] - MouseY)**2 < 50)
+                break;
         }
+        return DrectionCursor[i];
     }
-    
-    InsideRect(MouseX, MouseY){
-        return this.x < MouseX && MouseX < this.width + this.x && this.y < MouseY && MouseY < this.height + this.y;
-    }
-    
-    move(OffsetX, OffsetY){
-        this.x += OffsetX;
-        this.y += OffsetY;
-    }
+
 }
 
-class TextElement{
+class TextElement extends Element{
     constructor(content, x, y, width, height){
+        super(x, y, width, height);
         this.type = 'text';
         this.content = content;
-        this.x = x;
-        this.y = y;
-        this.height = height;
-        this.width = width;
     }
     
-    InsideRect(MouseX, MouseY){
-        return this.x < MouseX && MouseX < this.width + this.x && this.y < MouseY && MouseY < this.height + this.y;
-    }
 }
 
 //***********************************
 //
-// init
+// Mouse & Window Event Function 
 //
 //***********************************
-
-
-function WindowsUpdate(){
-	RenderList[0].height = CanvasHeight = SrcCanvas.height = $("dstCanvas").height = $("right").clientHeight* 0.8;
-	RenderList[0].width = CanvasWidth = SrcCanvas.width = $("dstCanvas").width = CanvasHeight * 0.75;
-	$("right").style.marginLeft = $("left").clientWidth+"px";
-	SrcCanvas.style.marginLeft = CanvasWidth *0.1 +"px";
-	$("dstCanvas").style.marginLeft = CanvasWidth * 1.2+"px";
-	CanvasUpdate();
-}
 
 function windowToCanvas(x,y) {
-    var box = SrcCanvas.getBoundingClientRect();  
+    var box = $('srcCanvas').getBoundingClientRect();  
     return {
-        x: x - box.left - (box.width - SrcCanvas.width) / 2,
-        y: y - box.top - (box.height - SrcCanvas.height) / 2
+        x: x - box.left - (box.width - $('srcCanvas').width) / 2,
+        y: y - box.top - (box.height - $('srcCanvas').height) / 2
     };
 }
 
+function WindowUpdate(){
+    ScaleX                          = CanvasWidth;
+    ScaleY                          = CanvasHeight;
+    $('left').style.height          = (document.body.clientHeight - $('head').clientHeight) + 'px';
+    $('right').style.height         = (document.body.clientHeight - $('head').clientHeight) + 'px';
+    $('right').style.width          = (document.body.clientWidth  - $('left').clientWidth)  + 'px';
+    $("right").style.marginLeft     = $("left").clientWidth+"px";
+    $('srcCanvas').width            = $("right").clientWidth;
+    $('srcCanvas').height           = $("right").clientHeight;
+	CanvasHeight                    = $('srcCanvas').height *0.8;
+	CanvasWidth                     = CanvasHeight * 0.75;
+	CanvasX                         = $('srcCanvas').width * 0.4;
+    CanvasY                         = CanvasHeight *0.1;
+    ScaleX                          = CanvasWidth/ScaleX;
+    ScaleY                          = CanvasHeight/ScaleY;
+    ResizeRenderList(ScaleX, ScaleY);
+	DrawElement();
+}
+
+function DefaultMove(evt) {
+
+        var pos = windowToCanvas(event.clientX, event.clientY);
+        if (ChooseIndex != 0){
+            $('srcCanvas').style.cursor = RenderList[ChooseIndex].GetDirection(pos.x - CanvasX, pos.y - CanvasY);
+        }
+        
+        var index = 0;
+        for(var i = RenderList.length-1; i!=-1; i--){
+            if(RenderList[i].InsideRect(pos.x - CanvasX, pos.y- CanvasY)){
+                index = i;
+                break;
+            }
+        }
+        
+        if (index == 0){
+            $('srcCanvas').style.cursor = 'default';
+            return ;
+        }
+}
+
 function CanvasInit(){
-	RenderList.push(new ImageElement(null, 0, 0, SrcCanvas.width, SrcCanvas.height));
-    SrcCanvas.onmousedown  = function (event){
+    $('srcCanvas').onmousedown  = function (event){
         var index = 0;
         var pos = windowToCanvas(event.clientX, event.clientY);
         for(var i = RenderList.length-1; i!=-1; i--){
-            if(RenderList[i].InsideRect(pos.x, pos.y)){
+            if(RenderList[i].InsideRect(pos.x - CanvasX, pos.y - CanvasY)){
                 index = i;
                 break;
             }
@@ -89,117 +194,158 @@ function CanvasInit(){
         if (index == 0){
             return ;
         }
-        Oldmove = SrcCanvas.onmousemove;
-        SrcCanvas.onmousemove = function (evt) {
-            SrcCanvas.style.cursor = 'move';
+        $('srcCanvas').onmousemove = function (evt) {
             var posl = windowToCanvas(evt.clientX, evt.clientY);
             var x = posl.x - pos.x;
             var y = posl.y - pos.y;
             pos=posl;
-            RenderList[index].move(x,y);
+            RenderList[index].DirectFunction($('srcCanvas').style.cursor, x, y);
             CanvasUpdate();
         };
         $("right").onmouseup = function () {
-            SrcCanvas.onmousemove = Oldmove;
+            $('srcCanvas').onmousemove = DefaultMove;
             $("right").onmouseup = null;
-            SrcCanvas.style.cursor = 'default';
         };
     }
-    SrcCanvas.onmousemove = function (evt) {
-        var posl = windowToCanvas(evt.clientX, evt.clientY);
-        var index = 0;
-        var pos = windowToCanvas(event.clientX, event.clientY);
-        for(var i = RenderList.length-1; i!=-1; i--){
-            if(RenderList[i].InsideRect(pos.x, pos.y)){
-                index = i;
-                break;
-            }
-        }
-        
-        if (index == 0){
-            SrcCanvas.style.cursor = 'e-resize';
-            return ;
-        }
-        SrcCanvas.style.cursor = 'move';
-    };
+    WindowUpdate();
+    window.onresize       = WindowUpdate;   
+    $('srcCanvas').onmousemove = DefaultMove;
+    RenderList.push(new ImageElement(null, 0, 0, CanvasWidth, CanvasHeight));
 }
 
 //***********************************
 //
-// function 
+// Canvas Draw function 
 //
 //***********************************
-function DrawChosenRect(ctx, e){
+
+function CanvasUpdate(){
+    ClearCanvas();
+    DrawElement();
+    DrawChosenRect();
+    DrawTools();
+}
+
+function ClearCanvas(){
+    var ctx = $('srcCanvas').getContext("2d");
+    ctx.fillStyle="#CCCAC4";
+    ctx.fillRect(0, 0, $('srcCanvas').width, $('srcCanvas').height);
+    ctx.fillStyle = 'white';
+    ctx.fillRect(CanvasX, CanvasY, CanvasWidth, CanvasHeight);
+}
+
+function DrawTools(){
+    var ctx = $('srcCanvas').getContext("2d");
+}
+
+function DrawChosenRect(){
+    if (ChooseIndex == 0) return ;
+    var ctx = $('srcCanvas').getContext("2d");
+    e = RenderList[ChooseIndex];
+    var TempX = CanvasX + e.x;
+    var TempY = CanvasY + e.y;
 	ctx.lineWidth = 3;
 	ctx.beginPath();
 	ctx.setLineDash([10,5]);
 	ctx.strokeStyle = '#666666';
-	ctx.moveTo(e.x, e.y);
-	ctx.lineTo(e.x + e.width, e.y);
-	ctx.lineTo(e.x+e.width, e.y+e.height);
-	ctx.lineTo(e.x, e.y + e.height);
-	ctx.lineTo(e.x, e.y);
+	ctx.moveTo(TempX, TempY);
+	ctx.lineTo(TempX + e.width, TempY);
+	ctx.lineTo(TempX+e.width, TempY+e.height);
+	ctx.lineTo(TempX, TempY + e.height);
+	ctx.lineTo(TempX, TempY);
 	ctx.stroke();
-  ctx.setLineDash([]);
+    ctx.setLineDash([]);
 	ctx.strokeStyle = "black";
-	TempArray = [[e.x, e.y], [e.x+e.width/2, e.y], [e.x+e.width, e.y], 
-	 [e.x, e.y + e.height/2], [e.x+e.width, e.y+e.height2],
-	[e.x, e.y+e.height], [e.x+e.width/2, e.y+e.height], [e.x+e.width, e.y+e.height]];
+	TempArray = e.GetEightDirection();
 	for(var i=0; i<TempArray.length; i++){
 		ctx.beginPath();
-		ctx.arc(TempArray[i][0], TempArray[i][1], 5, 0, Math.PI*2, true);
+		ctx.arc(CanvasX+ TempArray[i][0], CanvasY+TempArray[i][1], 5, 0, Math.PI*2, true);
 		ctx.fillStyle = "white";
 		ctx.fill();
     ctx.stroke();
 	}
 }
 
-function RenderListSwap(i, j){
-    [RenderList[i],RenderList[j]] = [RenderList[j],RenderList[i]]
-}
-
-function CanvasUpdate(){
-    var ctx = SrcCanvas.getContext("2d");
-    ctx.clearRect(0,0,CanvasWidth,CanvasHeight);
+function DrawElement(){
+    var ctx = $('srcCanvas').getContext("2d");
+    ClearCanvas();
     RenderList.forEach( function(e, i){
         if (e.type == "img"){
 			if (e.content == null){
 				return ;
 			}
-            ctx.drawImage(e.content, e.x, e.y, e.width, e.height);
+            if(CanvasWidth < e.x ||  e.x + e.width < 0 || CanvasHeight < e.y || e.y + e.height < 0) return ;
+            if(e.x >= 0){
+                var DrawX = e.x + CanvasX;
+                var CutX = 0;
+                var DrawWidth = (e.x + e.width < CanvasWidth) ? e.width: CanvasWidth - e.x;
+            }
+            else {
+                var DrawX = CanvasX;
+                var CutX = - e.x;
+                var DrawWidth = (e.x + e.width < CanvasWidth) ? e.width - CutX : CanvasWidth;
+            }
+            
+            if(e.y >= 0){
+                var DrawY = e.y + CanvasY;
+                var CutY = 0;
+                var DrawHeight = ( e.y + e.height < CanvasHeight) ? e.height: CanvasHeight -e.y;
+            }
+            else{
+                var DrawY = CanvasY;
+                var CutY = - e.y;
+                var DrawHeight = ( e.y + e.height < CanvasHeight) ? e.height - CutY: CanvasHeight;
+            }
+            ctx.drawImage(e.content, CutX*e.content.width/e.width, CutY*e.content.height/e.height, e.content.width*DrawWidth/e.width, e.content.height*DrawHeight/e.height, DrawX, DrawY, DrawWidth, DrawHeight);
         }
     })
-	if (ChooseIndex != 0){
-		DrawChosenRect(ctx, RenderList[ChooseIndex]);
-	}
 }
 
+function ElementMoveUp(index){
+    if(index >= RenderList.length - 1) return ;
+    [RenderList[index], RenderList[index + 1]] = [RenderList[index + 1], RenderList[index]];
+}
 
-function AddTextElement(type, content, x, y, height, width){
-    RenderList.push(new ImageElement(type, content, x, y, height, width));
+function ElementMoveUp(index){
+    if(index < 2) return ;
+    [RenderList[index], RenderList[index - 1]] = [RenderList[index - 1], RenderList[index]];
+}
+
+function ResizeRenderList(ScaleX, ScaleY){
+    RenderList.forEach( function(e, i){
+        e.x *= ScaleX;
+        e.y *= ScaleY;
+        e.width *= ScaleX;
+        e.height *= ScaleY;
+    });
+}
+
+function AddTextElement(content, x, y, height, width){
+    RenderList.push(new TextElement(content, x, y, height, width));
     CanvasUpdate();
 }
 
-function AddImageElement(type, content, x, y, height, width){
-    RenderList.push(new ImageElement(type, content, x, y, height, width));
+function AddImageElement(content, x, y, height, width){
+    RenderList.push(new ImageElement(content, x, y, height, width));
     CanvasUpdate();
 }
 
-function CanvasClear(CanvasName){
-    var cv = document.getElementById(CanvasName);  
-    var ctx = cv.getContext("2d");
-    ctx.clearRect(0,0,CanvasWidth,CanvasHeight);
+function ResetCanvas(){
+    RenderList.length = 1;
+    RenderList[0].content = null;
+    ChooseIndex = 0;
+    ClearCanvas();
 }
 
-function DrawBackgroud(CanvasName, Img){
+function DrawBackgroud(Img){
 	RenderList[0].content = Img;
-	CanvasUpdate();
+	DrawElement();
 }
 
-function DrawText(CanvasName, Text){
+function DrawText(Text){
     AddTextElement(Text, 0, 0, CanvasWidth, CanvasHeight);
 }
 
-function DrawLogo(CanvasName, Img){
+function DrawLogo(Img){
     AddImageElement(Img, 0, 0, 0, 0);
 }

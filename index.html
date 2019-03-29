@@ -7,10 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 </head>
 <body>
-    <input type="file" id="BackgroundFile" style="visibility:hidden;">
-    <input type="file" id="LogoFile" style="visibility:hidden;">
     <div id = "head">
-    <nav >
+    <nav>
         <a class="Title">AI Graphic Designer</a>
         <ul>
             <li><input id="TextInput" type="text"></li>
@@ -20,15 +18,15 @@
             <li><a id="Reset">Reset</a></li>
         </ul>
 	</nav>
-
     </div>
     <div id = "left">
 		<button type="button" id="SendSrc">hit me</button> 
     </div> 
     <div id = "right">
         <canvas id="srcCanvas" width="468" height="648"> </canvas>
-        <canvas id="dstCanvas" width="468" height="648"> </canvas>
     </div>
+    <input type="file" id="BackgroundFile" style="visibility:hidden; ">
+    <input type="file" id="LogoFile" style="visibility:hidden ">
     <script src="js/settings.js" type="text/javascript" charset="utf-8"></script>
     <script src="js/Canvas.js" type="text/javascript" charset="utf-8"></script>
     <script src="js/FileControler.js" type="text/javascript" charset="utf-8"></script>
