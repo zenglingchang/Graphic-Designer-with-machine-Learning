@@ -132,25 +132,25 @@ class TextElement extends Element{
 //***********************************
 
 function windowToCanvas(x,y) {
-    var box = $('srcCanvas').getBoundingClientRect();  
+    var box = $('#srcCanvas')[0].getBoundingClientRect();  
     return {
-        x: x - box.left - (box.width - $('srcCanvas').width) / 2,
-        y: y - box.top - (box.height - $('srcCanvas').height) / 2
+        x: x - box.left - (box.width - $('#srcCanvas')[0].width) / 2,
+        y: y - box.top - (box.height - $('#srcCanvas')[0].height) / 2
     };
 }
 
 function WindowUpdate(){
     ScaleX                          = CanvasWidth;
     ScaleY                          = CanvasHeight;
-    $('left').style.height          = (document.body.clientHeight - $('head').clientHeight) + 'px';
-    $('right').style.height         = (document.body.clientHeight - $('head').clientHeight) + 'px';
-    $('right').style.width          = (document.body.clientWidth  - $('left').clientWidth)  + 'px';
-    $("right").style.marginLeft     = $("left").clientWidth+"px";
-    $('srcCanvas').width            = $("right").clientWidth;
-    $('srcCanvas').height           = $("right").clientHeight;
-	CanvasHeight                    = $('srcCanvas').height *0.8;
+    $('#left').height (  document.body.clientHeight - $('#head').height() );
+    $('#right').height(  document.body.clientHeight - $('#head').height() );
+    $('#right').width  (  document.body.clientWidth - $('#left').width()  );
+    $("#right").css( 'marginLeft', $("#left").width() );
+    $('#srcCanvas')[0].width  = $("#right").width()  ;
+    $('#srcCanvas')[0].height = $("#right").height() ;
+	CanvasHeight                    = $('#srcCanvas')[0].height * 0.8;
 	CanvasWidth                     = CanvasHeight * 0.75;
-	CanvasX                         = $('srcCanvas').width * 0.4;
+	CanvasX                         = $('#srcCanvas')[0].width  * 0.4;
     CanvasY                         = CanvasHeight *0.1;
     ScaleX                          = CanvasWidth/ScaleX;
     ScaleY                          = CanvasHeight/ScaleY;
@@ -162,7 +162,7 @@ function DefaultMove(evt) {
 
         var pos = windowToCanvas(event.clientX, event.clientY);
         if (ChooseIndex != 0){
-            $('srcCanvas').style.cursor = RenderList[ChooseIndex].GetDirection(pos.x - CanvasX, pos.y - CanvasY);
+            $('#srcCanvas')[0].style.cursor = RenderList[ChooseIndex].GetDirection(pos.x - CanvasX, pos.y - CanvasY);
         }
         
         var index = 0;
@@ -174,13 +174,13 @@ function DefaultMove(evt) {
         }
         
         if (index == 0){
-            $('srcCanvas').style.cursor = 'default';
+            $('#srcCanvas')[0].style.cursor = 'default';
             return ;
         }
 }
 
 function CanvasInit(){
-    $('srcCanvas').onmousedown  = function (event){
+    $('#srcCanvas')[0].onmousedown  = function (event){
         var index = 0;
         var pos = windowToCanvas(event.clientX, event.clientY);
         for(var i = RenderList.length-1; i!=-1; i--){
@@ -194,22 +194,22 @@ function CanvasInit(){
         if (index == 0){
             return ;
         }
-        $('srcCanvas').onmousemove = function (evt) {
+        $('#srcCanvas')[0].onmousemove = function (evt) {
             var posl = windowToCanvas(evt.clientX, evt.clientY);
             var x = posl.x - pos.x;
             var y = posl.y - pos.y;
             pos=posl;
-            RenderList[index].DirectFunction($('srcCanvas').style.cursor, x, y);
+            RenderList[index].DirectFunction($('#srcCanvas')[0].style.cursor, x, y);
             CanvasUpdate();
         };
-        $("right").onmouseup = function () {
-            $('srcCanvas').onmousemove = DefaultMove;
-            $("right").onmouseup = null;
+        $("#right")[0].onmouseup = function () {
+            $('#srcCanvas')[0].onmousemove = DefaultMove;
+            $("#right")[0].onmouseup = null;
         };
     }
     WindowUpdate();
     window.onresize       = WindowUpdate;   
-    $('srcCanvas').onmousemove = DefaultMove;
+    $('#srcCanvas')[0].onmousemove = DefaultMove;
     RenderList.push(new ImageElement(null, 0, 0, CanvasWidth, CanvasHeight));
 }
 
@@ -227,20 +227,20 @@ function CanvasUpdate(){
 }
 
 function ClearCanvas(){
-    var ctx = $('srcCanvas').getContext("2d");
+    var ctx = $('#srcCanvas')[0].getContext("2d");
     ctx.fillStyle="#CCCAC4";
-    ctx.fillRect(0, 0, $('srcCanvas').width, $('srcCanvas').height);
+    ctx.fillRect(0, 0, $('#srcCanvas')[0].width, $('#srcCanvas')[0].height);
     ctx.fillStyle = 'white';
     ctx.fillRect(CanvasX, CanvasY, CanvasWidth, CanvasHeight);
 }
 
 function DrawTools(){
-    var ctx = $('srcCanvas').getContext("2d");
+    var ctx = $('#srcCanvas')[0].getContext("2d");
 }
 
 function DrawChosenRect(){
     if (ChooseIndex == 0) return ;
-    var ctx = $('srcCanvas').getContext("2d");
+    var ctx = $('#srcCanvas')[0].getContext("2d");
     e = RenderList[ChooseIndex];
     var TempX = CanvasX + e.x;
     var TempY = CanvasY + e.y;
@@ -267,7 +267,7 @@ function DrawChosenRect(){
 }
 
 function DrawElement(){
-    var ctx = $('srcCanvas').getContext("2d");
+    var ctx = $('#srcCanvas')[0].getContext("2d");
     ClearCanvas();
     RenderList.forEach( function(e, i){
         if (e.type == "img"){
