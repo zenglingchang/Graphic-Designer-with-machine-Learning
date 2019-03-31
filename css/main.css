@@ -1,6 +1,4 @@
 * {
-	font-family: sans-serif;
-	font-size: 14px;
     box-sizing: border-box;
 }
 html, body {
@@ -16,7 +14,9 @@ html, body {
     margin: 0;
 }
 
-#head {
+#head {	
+	font-family: sans-serif;
+	font-size: 14px;
     background-color: #24292e;
     color: hsla(0, 0%, 100%, 0.7);
     padding: 12px 16px 12px 16px;
@@ -84,4 +84,16 @@ html, body {
     width: 240px;
     margin-right: 16px;
     font-size: 16px;
+}
+
+#text-toolbar {
+	z-index:100;
+	position: fixed;
+}
+
+#text-rect {
+	z-index: 100;
+	position: fixed;
+	margin-left:100px;
+	margin-top:100px;
 }

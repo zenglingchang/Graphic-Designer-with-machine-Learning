@@ -3,7 +3,16 @@
 // Static var
 //
 //***********************************
-
+var E = window.wangEditor;
+var editor = new E('#text-toolbar', '#text-rect');
+editor.customConfig.onchange = function (html) {
+	console.log(html);
+    var json = editor.txt.getJSON();
+	var jsonStr = JSON.stringify(json);
+	console.log(json);
+	console.log(jsonStr);
+}
+editor.create();
 RenderList       = new Array();
 var CanvasX      = 0;
 var CanvasY      = 0;
@@ -139,15 +148,33 @@ function windowToCanvas(x,y) {
     };
 }
 
+function CanvasToWindow(x,y){
+	var box = $('#srcCanvas')[0].getBoundingClientRect();
+	return {
+		x: x + box.left,
+		y: y + box.top
+	};
+}
+
 function WindowUpdate(){
     ScaleX                          = CanvasWidth;
     ScaleY                          = CanvasHeight;
-    $('#left').height (  document.body.clientHeight - $('#head').height() );
+    
+	// Update left, right, canvas
+	$('#left').height (  document.body.clientHeight - $('#head').height() );
     $('#right').height(  document.body.clientHeight - $('#head').height() );
     $('#right').width  (  document.body.clientWidth - $('#left').width()  );
     $("#right").css( 'marginLeft', $("#left").width() );
     $('#srcCanvas')[0].width  = $("#right").width()  ;
     $('#srcCanvas')[0].height = $("#right").height() ;
+	
+	// Update text editor
+	$(".toolbar").css('marginLeft', $('#left').width());
+	$('.toolbar').css('background-color','white');
+	$('.toolbar').css('position', 'fixed');
+	$('.toolbar').css('z-index',100);
+	$('.toolbar').css('width','100%');
+	
 	CanvasHeight                    = $('#srcCanvas')[0].height * 0.8;
 	CanvasWidth                     = CanvasHeight * 0.75;
 	CanvasX                         = $('#srcCanvas')[0].width  * 0.4;
@@ -207,9 +234,11 @@ function CanvasInit(){
             $("#right")[0].onmouseup = null;
         };
     }
-    WindowUpdate();
+	WindowUpdate();
     window.onresize       = WindowUpdate;   
     $('#srcCanvas')[0].onmousemove = DefaultMove;
+ 	$('#element-toolbar').toolbar({content:'#element-toolbar-options', position:'left', event: 'click', hideOnClick: true});
+	$('#element-toolbar').css('visibility', 'hidden');
     RenderList.push(new ImageElement(null, 0, 0, CanvasWidth, CanvasHeight));
 }
 
@@ -223,7 +252,7 @@ function CanvasUpdate(){
     ClearCanvas();
     DrawElement();
     DrawChosenRect();
-    DrawTools();
+    DrawElementToolbar();
 }
 
 function ClearCanvas(){
@@ -234,8 +263,16 @@ function ClearCanvas(){
     ctx.fillRect(CanvasX, CanvasY, CanvasWidth, CanvasHeight);
 }
 
-function DrawTools(){
-    var ctx = $('#srcCanvas')[0].getContext("2d");
+function DrawElementToolbar(){
+	if(ChooseIndex == 0){
+		$('#element-toolbar').css('visibility', 'hidden');
+		return ;
+	}
+	pos = CanvasToWindow(CanvasX + RenderList[ChooseIndex].x - 50, CanvasY + RenderList[ChooseIndex].y);
+	$('#element-toolbar').css('marginLeft', pos.x);
+	$('#element-toolbar').css('marginTop', pos.y);
+	$('#element-toolbar').css('visibility', '');
+	
 }
 
 function DrawChosenRect(){
@@ -262,7 +299,7 @@ function DrawChosenRect(){
 		ctx.arc(CanvasX+ TempArray[i][0], CanvasY+TempArray[i][1], 5, 0, Math.PI*2, true);
 		ctx.fillStyle = "white";
 		ctx.fill();
-    ctx.stroke();
+    	ctx.stroke();
 	}
 }
 
@@ -301,18 +338,35 @@ function DrawElement(){
     })
 }
 
-function ElementMoveUp(index){
-    if(index >= RenderList.length - 1) return ;
-    [RenderList[index], RenderList[index + 1]] = [RenderList[index + 1], RenderList[index]];
+function ElementMoveUp(){
+    if(ChooseIndex >= RenderList.length - 1 || ChooseIndex <= 0) return ;
+    [RenderList[ChooseIndex], RenderList[ChooseIndex + 1]] = [RenderList[ChooseIndex + 1], RenderList[ChooseIndex]];
+	ChooseIndex += 1;
+	CanvasUpdate();
 }
 
-function ElementMoveUp(index){
-    if(index < 2) return ;
-    [RenderList[index], RenderList[index - 1]] = [RenderList[index - 1], RenderList[index]];
+function ElementMoveDown(){
+    if(ChooseIndex < 2 || ChooseIndex >= RenderList.length) return ;
+    [RenderList[ChooseIndex], RenderList[ChooseIndex - 1]] = [RenderList[ChooseIndex - 1], RenderList[ChooseIndex]];
+	ChooseIndex -= 1;
+	CanvasUpdate();
+}
+
+function ElementRemove(){
+	if(ChooseIndex > 0 && ChooseIndex < RenderList.length){
+		RenderList.splice(ChooseIndex,1);
+	}
+	ChooseIndex = 0;
+	CanvasUpdate();
 }
 
 function ResizeRenderList(ScaleX, ScaleY){
     RenderList.forEach( function(e, i){
+		if(i == 0){
+			e.width  = CanvasWidth;
+			e.height = CanvasHeight;
+			return ;
+		}
         e.x *= ScaleX;
         e.y *= ScaleY;
         e.width *= ScaleX;
@@ -343,7 +397,7 @@ function DrawBackgroud(Img){
 }
 
 function DrawText(Text){
-    AddTextElement(Text, 0, 0, CanvasWidth, CanvasHeight);
+    
 }
 
 function DrawLogo(Img){

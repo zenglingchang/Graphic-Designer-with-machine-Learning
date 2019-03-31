@@ -6,3 +6,5 @@
 # python
 *.pyc
 __pycache__/
+
+bower_components/
