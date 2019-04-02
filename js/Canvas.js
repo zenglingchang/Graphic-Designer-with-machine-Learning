@@ -6,8 +6,12 @@
 var E = window.wangEditor;
 var editor = new E('#text-toolbar', '#text-rect');
 editor.customConfig.onchange = function (html) {
+	if(RenderList[ChooseIndex].type == 'text'){
+		RenderList[ChooseIndex].html = html;
+	}
 	console.log(html);
-    var json = editor.txt.getJSON();
+    return ;
+	var json = editor.txt.getJSON();
 	var jsonStr = JSON.stringify(json);
 	console.log(json);
 	console.log(jsonStr);
@@ -113,25 +117,44 @@ class ImageElement extends Element{
         }
     }
     
-    GetDirection(MouseX, MouseY){
-        var i = 0;
-        TempArray = this.GetEightDirection();
-        for( ; i<TempArray.length ; i++){
-            if( (TempArray[i][0] - MouseX)**2 + (TempArray[i][1] - MouseY)**2 < 50)
-                break;
-        }
-        return DrectionCursor[i];
-    }
+ 
 
 }
 
 class TextElement extends Element{
-    constructor(content, x, y, width, height){
+    constructor(content, x, y, width, height, html){
         super(x, y, width, height);
         this.type = 'text';
-        this.content = content;
+        this.content = content;      
+		this.html = html;
+		if (height == 0 || width == 0){
+            this.height = content.height;
+            this.width = content.width;
+        }
     }
+
+	GetDirection(MouseX, MouseY){
+        if (MouseX > this.x + 20 && MouseX < this.x + this.width-20 && MouseY > this.y + 20 && MouseY < this.y + this.height -20){
+			return 'text';
+		}
+		else 
+        	return 'move';
+    }
+
+	DirectFunction(Direction, OffsetX, OffsetY){
+        switch (Direction) {
+            case "move":
+                this.x += OffsetX;
+                this.y += OffsetY;
+                break;
+			case "text":
+				break;
+		}
+	}
     
+	GetEightDirection(){
+    	return [];
+	}
 }
 
 //***********************************
@@ -206,6 +229,30 @@ function DefaultMove(evt) {
         }
 }
 
+function SaveEditor(index){
+	console.log('asdgas');
+	var node = $('div.w-e-text')[0];
+	domtoimage.toPng(node)
+    	.then(function (dataUrl) {
+        	var text = new Image();
+        	text.onload = function(event){
+				console.log(dataUrl);
+				console.log()
+				RenderList[index].html = editor.txt.html();
+				RenderList[index].content = text;
+				RenderList[index].width = text.width;
+				RenderList[index].height = text.height;
+				$('#text-rect').css('visibility', 'hidden');
+				CanvasUpdate();
+			}
+			text.src = dataUrl;
+    	})
+    	.catch(function (error) {
+        	console.error('oops, something went wrong!', error);
+    	});
+
+}
+
 function CanvasInit(){
     $('#srcCanvas')[0].onmousedown  = function (event){
         var index = 0;
@@ -216,6 +263,9 @@ function CanvasInit(){
                 break;
             }
         }
+		if(RenderList[ChooseIndex].type == 'text'){
+			SaveEditor(ChooseIndex);
+		}
         ChooseIndex = index;
 		CanvasUpdate();
         if (index == 0){
@@ -307,7 +357,7 @@ function DrawElement(){
     var ctx = $('#srcCanvas')[0].getContext("2d");
     ClearCanvas();
     RenderList.forEach( function(e, i){
-        if (e.type == "img"){
+        if (e.type == "img" || (e.type == "text" && i != ChooseIndex)) {
 			if (e.content == null){
 				return ;
 			}
@@ -335,6 +385,14 @@ function DrawElement(){
             }
             ctx.drawImage(e.content, CutX*e.content.width/e.width, CutY*e.content.height/e.height, e.content.width*DrawWidth/e.width, e.content.height*DrawHeight/e.height, DrawX, DrawY, DrawWidth, DrawHeight);
         }
+		else if ( i == ChooseIndex ){
+			console.log('show editor');
+			pos = CanvasToWindow(CanvasX + e.x, CanvasY + e.y);
+        	editor.txt.html(e.html);
+			$('#text-rect').css('marginLeft', pos.x);
+			$('#text-rect').css('marginTop', pos.y);
+			$('#text-rect').css('visibility', '');
+		}
     })
 }
 
@@ -375,6 +433,7 @@ function ResizeRenderList(ScaleX, ScaleY){
 }
 
 function AddTextElement(content, x, y, height, width){
+	console.log('add text!');
     RenderList.push(new TextElement(content, x, y, height, width));
     CanvasUpdate();
 }
@@ -396,8 +455,20 @@ function DrawBackgroud(Img){
 	DrawElement();
 }
 
-function DrawText(Text){
-    
+function DrawText(){
+	editor.txt.html('<p> Please input</p><p><br></p>');
+	var node = document.getElementById('text-rect');
+	domtoimage.toPng(node)
+    	.then(function (dataUrl) {
+        	var text = new Image();
+        	text.onload = function(event){
+				AddTextElement(text, 0, 0, 0, 0);
+			}
+			text.src = dataUrl;
+    	})
+    	.catch(function (error) {
+        	console.error('oops, something went wrong!', error);
+    	});
 }
 
 function DrawLogo(Img){

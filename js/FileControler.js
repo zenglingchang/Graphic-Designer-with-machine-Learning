@@ -39,6 +39,9 @@ function FileHandlerInit(){
 	document.getElementById('Logo').onclick = function(){
 		document.getElementById('LogoFile').click();
 	};
+	document.getElementById('Text').onclick = function(){
+		DrawText();
+	}
 	document.getElementById('Background').onclick = function(){
 		document.getElementById('BackgroundFile').click();
 	}
