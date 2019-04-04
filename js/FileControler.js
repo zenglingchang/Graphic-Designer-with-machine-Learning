@@ -33,8 +33,7 @@ function AddLogo(e){
 
 function FileHandlerInit(){
 	document.getElementById('SendSrc').onclick = function(){
-		SendLogo();
-		SendBackgroud();
+		sendImg(GetCanvasContent());
 	};
 	document.getElementById('Logo').onclick = function(){
 		document.getElementById('LogoFile').click();

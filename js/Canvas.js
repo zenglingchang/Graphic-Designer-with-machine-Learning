@@ -9,12 +9,7 @@ editor.customConfig.onchange = function (html) {
 	if(RenderList[ChooseIndex].type == 'text'){
 		RenderList[ChooseIndex].html = html;
 	}
-	console.log(html);
     return ;
-	var json = editor.txt.getJSON();
-	var jsonStr = JSON.stringify(json);
-	console.log(json);
-	console.log(jsonStr);
 }
 editor.create();
 RenderList       = new Array();
@@ -127,6 +122,7 @@ class TextElement extends Element{
         this.type = 'text';
         this.content = content;      
 		this.html = html;
+        this.editorshow = true;
 		if (height == 0 || width == 0){
             this.height = content.height;
             this.width = content.width;
@@ -157,6 +153,29 @@ class TextElement extends Element{
 	}
 }
 
+function SetChoose(index){
+    var dfd = $.Deferred();
+    if(ChooseIndex < RenderList.length && RenderList[ChooseIndex].type == 'text' && ChooseIndex != index){
+            RenderList[ChooseIndex].editorshow = false;
+			SaveEditor(ChooseIndex)
+                .then(function (){
+                    ChooseIndex = index;
+                    if (ChooseIndex < RenderList.length && RenderList[ChooseIndex].type == 'text'){
+                        editor.txt.html(RenderList[ChooseIndex].html); 
+                    }
+                    $('#text-rect').css('visibility', 'hidden');
+                    dfd.resolve();
+                });
+		}
+    else{
+        ChooseIndex = index;
+        if (ChooseIndex < RenderList.length && RenderList[ChooseIndex].type == 'text'){
+            editor.txt.html(RenderList[ChooseIndex].html); 
+        }
+        dfd.resolve();
+    }
+    return dfd.promise();
+}
 //***********************************
 //
 // Mouse & Window Event Function 
@@ -184,8 +203,8 @@ function WindowUpdate(){
     ScaleY                          = CanvasHeight;
     
 	// Update left, right, canvas
-	$('#left').height (  document.body.clientHeight - $('#head').height() );
-    $('#right').height(  document.body.clientHeight - $('#head').height() );
+    $('#right').height(  document.body.clientHeight - $('#head')[0].clientHeight );
+    $('#left').height (  document.body.clientHeight - $('#head')[0].clientHeight );
     $('#right').width  (  document.body.clientWidth - $('#left').width()  );
     $("#right").css( 'marginLeft', $("#left").width() );
     $('#srcCanvas')[0].width  = $("#right").width()  ;
@@ -211,7 +230,7 @@ function WindowUpdate(){
 function DefaultMove(evt) {
 
         var pos = windowToCanvas(event.clientX, event.clientY);
-        if (ChooseIndex != 0){
+        if (ChooseIndex != 0 && ChooseIndex < RenderList.length){
             $('#srcCanvas')[0].style.cursor = RenderList[ChooseIndex].GetDirection(pos.x - CanvasX, pos.y - CanvasY);
         }
         
@@ -230,27 +249,25 @@ function DefaultMove(evt) {
 }
 
 function SaveEditor(index){
-	console.log('asdgas');
+    var dfd = $.Deferred();
 	var node = $('div.w-e-text')[0];
 	domtoimage.toPng(node)
     	.then(function (dataUrl) {
         	var text = new Image();
         	text.onload = function(event){
-				console.log(dataUrl);
-				console.log()
+                console.log('save editor');
 				RenderList[index].html = editor.txt.html();
 				RenderList[index].content = text;
 				RenderList[index].width = text.width;
 				RenderList[index].height = text.height;
-				$('#text-rect').css('visibility', 'hidden');
-				CanvasUpdate();
+                dfd.resolve();
 			}
 			text.src = dataUrl;
     	})
     	.catch(function (error) {
         	console.error('oops, something went wrong!', error);
     	});
-
+    return dfd.promise();
 }
 
 function CanvasInit(){
@@ -263,32 +280,37 @@ function CanvasInit(){
                 break;
             }
         }
-		if(RenderList[ChooseIndex].type == 'text'){
-			SaveEditor(ChooseIndex);
-		}
-        ChooseIndex = index;
-		CanvasUpdate();
-        if (index == 0){
-            return ;
-        }
-        $('#srcCanvas')[0].onmousemove = function (evt) {
-            var posl = windowToCanvas(evt.clientX, evt.clientY);
-            var x = posl.x - pos.x;
-            var y = posl.y - pos.y;
-            pos=posl;
-            RenderList[index].DirectFunction($('#srcCanvas')[0].style.cursor, x, y);
-            CanvasUpdate();
-        };
-        $("#right")[0].onmouseup = function () {
-            $('#srcCanvas')[0].onmousemove = DefaultMove;
-            $("#right")[0].onmouseup = null;
-        };
+		$.when(SetChoose(index))
+            .then( function () {
+                if($('#srcCanvas')[0].style.cursor == 'text'){
+                    RenderList[ChooseIndex].editorshow = true;
+                    CanvasUpdate();
+                    return ;
+                }
+                CanvasUpdate();
+                if (index == 0){
+                    return ;
+                }
+                $('#srcCanvas')[0].onmousemove = function (evt) {
+                    var posl = windowToCanvas(evt.clientX, evt.clientY);
+                    var x = posl.x - pos.x;
+                    var y = posl.y - pos.y;
+                    pos=posl;
+                    RenderList[index].DirectFunction($('#srcCanvas')[0].style.cursor, x, y);
+                    CanvasUpdate();
+                };
+                $("#right")[0].onmouseup = function () {
+                    $('#srcCanvas')[0].onmousemove = DefaultMove;
+                    $("#right")[0].onmouseup = null;
+                };
+            })
     }
 	WindowUpdate();
     window.onresize       = WindowUpdate;   
     $('#srcCanvas')[0].onmousemove = DefaultMove;
  	$('#element-toolbar').toolbar({content:'#element-toolbar-options', position:'left', event: 'click', hideOnClick: true});
 	$('#element-toolbar').css('visibility', 'hidden');
+    $('#text-rect').css('visibility', 'hidden');
     RenderList.push(new ImageElement(null, 0, 0, CanvasWidth, CanvasHeight));
 }
 
@@ -357,7 +379,7 @@ function DrawElement(){
     var ctx = $('#srcCanvas')[0].getContext("2d");
     ClearCanvas();
     RenderList.forEach( function(e, i){
-        if (e.type == "img" || (e.type == "text" && i != ChooseIndex)) {
+        if (e.type == "img" || (e.type == "text" && !e.editorshow)) {
 			if (e.content == null){
 				return ;
 			}
@@ -385,8 +407,7 @@ function DrawElement(){
             }
             ctx.drawImage(e.content, CutX*e.content.width/e.width, CutY*e.content.height/e.height, e.content.width*DrawWidth/e.width, e.content.height*DrawHeight/e.height, DrawX, DrawY, DrawWidth, DrawHeight);
         }
-		else if ( i == ChooseIndex ){
-			console.log('show editor');
+		else if ( e.editorshow ){
 			pos = CanvasToWindow(CanvasX + e.x, CanvasY + e.y);
         	editor.txt.html(e.html);
 			$('#text-rect').css('marginLeft', pos.x);
@@ -433,7 +454,6 @@ function ResizeRenderList(ScaleX, ScaleY){
 }
 
 function AddTextElement(content, x, y, height, width){
-	console.log('add text!');
     RenderList.push(new TextElement(content, x, y, height, width));
     CanvasUpdate();
 }
@@ -456,21 +476,66 @@ function DrawBackgroud(Img){
 }
 
 function DrawText(){
-	editor.txt.html('<p> Please input</p><p><br></p>');
-	var node = document.getElementById('text-rect');
-	domtoimage.toPng(node)
-    	.then(function (dataUrl) {
-        	var text = new Image();
-        	text.onload = function(event){
-				AddTextElement(text, 0, 0, 0, 0);
-			}
-			text.src = dataUrl;
-    	})
-    	.catch(function (error) {
-        	console.error('oops, something went wrong!', error);
-    	});
+    $.when(SetChoose(RenderList.length))
+        .then( function (){
+            editor.txt.html('<p> Please input</p><p><br></p>');
+            var node = document.getElementById('text-rect');
+            domtoimage.toPng(node)
+                .then(function (dataUrl) {
+                    var text = new Image();
+                    text.onload = function(event){
+                        AddTextElement(text, 0, 0, 0, 0);
+                    }
+                    text.src = dataUrl;
+                })
+                .catch(function (error) {
+                    console.error('oops, something went wrong!', error);
+                });
+        })
 }
 
 function DrawLogo(Img){
     AddImageElement(Img, 0, 0, 0, 0);
+}
+
+//***********************************
+//
+// Canvas & Socket 
+//
+//***********************************
+
+function GetCanvasContent(){
+    var ctx = $('#CanvasBuffer')[0].getContext('2d');
+    $('#CanvasBuffer')[0].width = CanvasWidth;
+    $('#CanvasBuffer')[0].height = CanvasHeight;
+    ctx.clearRect (0, 0, CanvasWidth, CanvasHeight);
+    RenderList.forEach( function(e, i){
+        if (e.content == null){
+            return ;
+        }
+        if(CanvasWidth < e.x ||  e.x + e.width < 0 || CanvasHeight < e.y || e.y + e.height < 0) return ;
+        if(e.x >= 0){
+            var DrawX = e.x;
+            var CutX = 0;
+            var DrawWidth = (e.x + e.width < CanvasWidth) ? e.width: CanvasWidth - e.x;
+        }
+        else {
+            var DrawX = 0;
+            var CutX = - e.x;
+            var DrawWidth = (e.x + e.width < CanvasWidth) ? e.width - CutX : CanvasWidth;
+        }
+        
+        if(e.y >= 0){
+            var DrawY = e.y ;
+            var CutY = 0;
+            var DrawHeight = ( e.y + e.height < CanvasHeight) ? e.height: CanvasHeight -e.y;
+        }
+        else{
+            var DrawY = 0;
+            var CutY = - e.y;
+            var DrawHeight = ( e.y + e.height < CanvasHeight) ? e.height - CutY: CanvasHeight;
+        }
+        ctx.drawImage(e.content, CutX*e.content.width/e.width, CutY*e.content.height/e.height, e.content.width*DrawWidth/e.width, e.content.height*DrawHeight/e.height, DrawX, DrawY, DrawWidth, DrawHeight);
+    });
+    return $('#CanvasBuffer')[0].toDataURL();
 }
