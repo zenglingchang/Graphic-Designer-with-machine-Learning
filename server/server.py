@@ -5,6 +5,9 @@ import numpy as np
 from PIL import Image
 from aiohttp import web
 from multiprocessing import Process
+from DeepRankingNetwork import DRN
+
+Cute = 0
 
 #############################
 #
@@ -65,9 +68,8 @@ async def wshandler(request):
                     img = Image.open(image)
                     img = img.resize((192,256), Image.ANTIALIAS)
                     img.show()
-                    c = np.array(img)
-                    print(c.reshape([-1,192*256*4]))
-                    
+                    DRnetwork = DRN()
+                    print(DRnetwork.Get_Score(np.array(img), Cute))
         except Exception as e:
             print(e)
             break
@@ -97,7 +99,7 @@ def WebInit():
 
 def Main():
     print('Main Process (%s) start...' % os.getpid())
-    time.sleep(1)
+    time.sleep(2)
     while 1:
         Input = input('Manager:')
         if Input == '-exit':

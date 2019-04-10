@@ -24,7 +24,7 @@ def bias_variable( shape ):
     initial = tf.constant(0.1, shape=shape)
     return initial
     
-class DeepRankingNetwork:
+class DRN:
     def __init__(self):
         self.lr = LEARNING_RATE
         
@@ -117,7 +117,7 @@ class DeepRankingNetwork:
             
             # Fully connected layer 1 : Vector[16] --> Vector[64]
             with tf.variable_scope('fc1'):
-                w_fc1 = tf.get_variable('w1', regularizer=l2_reg, initializer=weight_variable([16, 64]), collections=COLLECTIONS)
+                w_fc1 = tf.get_variable('w1', regularizer=l2_reg, initializer=weight_variable([15, 64]), collections=COLLECTIONS)
                 b_fc1 = tf.get_variable('b1', regularizer=l2_reg, initializer=bias_variable([64]), collections=COLLECTIONS)
                 l_positiveTags = tf.reshape(self.PositiveTags, [-1,16])
                 l_negativeTags = tf.reshape(self.NegativeTags, [-1,16])
@@ -178,9 +178,9 @@ class DeepRankingNetwork:
         self.lr = LearningRate
         
     def Get_Score(self, img, Tag):
-    
-        ImgData = img 
-        TagData = Tag 
+        TagData = [[0 if i != Tag else 1 for i in range(0,16)]]
+        print(TagData)
+        ImgData = img.reshape([-1,256*192*4])
         #somefunction ....
         
         Score = self.sess.run(self.Score, feed_dict={ 
