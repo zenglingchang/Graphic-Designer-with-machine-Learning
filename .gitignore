@@ -6,5 +6,5 @@
 # python
 *.pyc
 __pycache__/
-
-bower_components/
+logs/
+my_net/

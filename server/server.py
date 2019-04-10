@@ -1,6 +1,8 @@
-import os, sys, time, json, base64
+import os, sys, time, json, base64, io
 import asyncio
 import aiohttp
+import numpy as np
+from PIL import Image
 from aiohttp import web
 from multiprocessing import Process
 
@@ -59,9 +61,13 @@ async def wshandler(request):
                 print(data)
                 if data[0] == 'Img':
                     imgdata = base64.b64decode(data[1].replace('data:image/png;base64,',''))
-                    print(imgdata)
-                    with open(r'd:\test.jpg', 'wb') as f:
-                        f.write(imgdata)
+                    image = io.BytesIO(imgdata)
+                    img = Image.open(image)
+                    img = img.resize((192,256), Image.ANTIALIAS)
+                    img.show()
+                    c = np.array(img)
+                    print(c.reshape([-1,192*256*4]))
+                    
         except Exception as e:
             print(e)
             break
