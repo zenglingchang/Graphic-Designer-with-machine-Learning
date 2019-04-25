@@ -9,6 +9,10 @@ function sendImg(Img){
 	sendMessage(['Img',Img]);
 }
 
+function sendImgList(ImgList){
+	sendMessage(['Design']+ImgList);
+}
+
 function sendMessage(msgArray) {
 	var msg = JSON.stringify(msgArray);
     ws.send(msg);

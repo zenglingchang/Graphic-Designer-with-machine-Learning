@@ -539,3 +539,7 @@ function GetCanvasContent(){
     });
     return $('#CanvasBuffer')[0].toDataURL();
 }
+
+function GetElementList(){
+		
+}

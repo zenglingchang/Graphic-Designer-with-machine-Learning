@@ -1,12 +1,12 @@
 import os, sys, time, json, base64, io
 import asyncio
 import aiohttp
+import threading
 import numpy as np
 from PIL import Image
 from aiohttp import web
 from multiprocessing import Process
 from DeepRankingNetwork import DRN
-
 Cute = 0
 
 #############################
@@ -14,10 +14,12 @@ Cute = 0
 #   Other Function 
 #
 ##############################
-x = 'asdfasdvzxcvsad'
+
 def show():
-    print(x)
-    return 
+    t = threading.Thread(target=lambda:os.system('tensorboard --logdir=logs'), args=())
+    t.setDaemon(True)
+    t.start()
+    time.sleep(3)
     
 def help():
     content = '''Command:
@@ -45,6 +47,7 @@ Description = {
 
 async def handle(request):
     index = open(os.path.join(sys.path[0], '../index.html'), 'rb')
+    print(os.path.join(sys.path[0], '../index.html'))
     content = index.read()
     return web.Response(body=content, content_type='text/html')
 

@@ -117,7 +117,7 @@ class DRN:
             
             # Fully connected layer 1 : Vector[16] --> Vector[64]
             with tf.variable_scope('fc1'):
-                w_fc1 = tf.get_variable('w1', regularizer=l2_reg, initializer=weight_variable([15, 64]), collections=COLLECTIONS)
+                w_fc1 = tf.get_variable('w1', regularizer=l2_reg, initializer=weight_variable([16, 64]), collections=COLLECTIONS)
                 b_fc1 = tf.get_variable('b1', regularizer=l2_reg, initializer=bias_variable([64]), collections=COLLECTIONS)
                 l_positiveTags = tf.reshape(self.PositiveTags, [-1,16])
                 l_negativeTags = tf.reshape(self.NegativeTags, [-1,16])
@@ -191,5 +191,5 @@ class DRN:
         return Score
     
     def Train(self):
-        print('nothing!')
+        
         return 
