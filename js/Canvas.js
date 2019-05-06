@@ -541,5 +541,14 @@ function GetCanvasContent(){
 }
 
 function GetElementList(){
-		
+	List = [];
+	RenderList.forEach( function(e, i){
+ 		var ctx = $('#CanvasBuffer')[0].getContext('2d');
+    	$('#CanvasBuffer')[0].width = CanvasWidth;
+    	$('#CanvasBuffer')[0].height = CanvasHeight;
+    	ctx.clearRect (0, 0, CanvasWidth, CanvasHeight);
+ 		ctx.drawImage(e.content, 0, 0, CanvasWidth, CanvasHeight);
+		List.push($('#CanvasBuffer')[0].toDataURL());
+	})
+	return List;
 }

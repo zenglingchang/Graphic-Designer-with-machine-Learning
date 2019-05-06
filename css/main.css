@@ -62,7 +62,13 @@ html, body {
 	border-left: 1px solid #e1e4e8;
     position:absolute;
 }
-
+#ScoreBox{
+	width: 75%;
+	float: left;
+    margin-left:15%;
+    padding-top:10%;
+    padding-bottom:2px;
+}
 #srcCanvas{
     position: absolute;
 }

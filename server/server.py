@@ -7,6 +7,7 @@ from PIL import Image
 from aiohttp import web
 from multiprocessing import Process
 from DeepRankingNetwork import DRN
+from ImgDeal import *
 Cute = 0
 
 #############################
@@ -39,6 +40,21 @@ Description = {
     }
 }
 
+def Base642Array(base64Data):
+    imgdata = base64.b64decode(base64Data.replace('data:image/png;base64,',''))
+    image = io.BytesIO(imgdata)
+    img = Image.open(image)
+    img = img.resize((192,256), Image.ANTIALIAS)
+    TempArray = np.array(img)
+    return TempArray
+    
+def Base642Img(base64Data):
+    imgdata = base64.b64decode(base64Data.replace('data:image/png;base64,',''))
+    image = io.BytesIO(imgdata)
+    img = Image.open(image)
+    img = img.resize((192,256), Image.ANTIALIAS)
+    return img
+    
 ###################################
 #
 #   Web Config & Function
@@ -58,21 +74,29 @@ async def wshandler(request):
     while True:
         try:
             msg = await ws.receive()
+            print(msg)
         except Exception as e:
             print(e)
             break
         try:
             if msg.type == aiohttp.WSMsgType.TEXT:
                 data = json.loads(msg.data)
-                print(data)
-                if data[0] == 'Img':
-                    imgdata = base64.b64decode(data[1].replace('data:image/png;base64,',''))
-                    image = io.BytesIO(imgdata)
-                    img = Image.open(image)
-                    img = img.resize((192,256), Image.ANTIALIAS)
-                    img.show()
-                    DRnetwork = DRN()
-                    print(DRnetwork.Get_Score(np.array(img), Cute))
+                if data[0] == 'GetScore':
+                    arr = Base642Array(data[1])
+                    DrNetwork = DRN()
+                    Score = int(DrNetwork.Get_Score(arr, Cute).tolist()[0][0])
+                    await ws.send_str(json.dumps(['Score', Score]))
+                elif data[0] == 'GetDesign':
+                    ElementList = []
+                    DesList = []
+                    for i in range(1, len(data)):
+                        img = Base642Img(data[i])
+                        ElementList.append(img)
+                        DesList.append([0,0,0.4,0.5])
+                    DesList[0] = [0,0,1,1]
+                    Back = GetDesginImg(ElementList, DesList)
+                    Back.show()
+                    await ws.send_str(json.dumps(['Design', DesList]))
         except Exception as e:
             print(e)
             break

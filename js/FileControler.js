@@ -32,9 +32,6 @@ function AddLogo(e){
 }
 
 function FileHandlerInit(){
-	document.getElementById('SendSrc').onclick = function(){
-		sendImg(GetCanvasContent());
-	};
 	document.getElementById('Logo').onclick = function(){
 		document.getElementById('LogoFile').click();
 	};

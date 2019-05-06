@@ -5,12 +5,12 @@ function ConnectInit(){
     ws.onmessage = messageHandler;
 }
 
-function sendImg(Img){
-	sendMessage(['Img',Img]);
+function sendImg(type, Img){
+	sendMessage([type,Img]);
 }
 
-function sendImgList(ImgList){
-	sendMessage(['Design']+ImgList);
+function sendImgList(type, ImgList){
+	sendMessage([type].concat(ImgList));
 }
 
 function sendMessage(msgArray) {
@@ -24,6 +24,23 @@ function openHandler(e){
 
 function messageHandler(e){
 	json = JSON.parse(e.data);
-	console.log(json);
+	switch (json[0]){
+		case "Score":
+			$("#Score")[0].innerHTML = json[1];
+			break;
+		case "Design":
+			DesignList = json[1];
+			console.log('GetDesgin', DesignList.toSource());
+			for(var i = 0; i<RenderList.length; i++){
+				if(i == 0) continue;
+				RenderList[i].x = DesignList[i][0]*CanvasX;
+				RenderList[i].y = DesignList[i][1]*CanvasY;
+				RenderList[i].width = DesignList[i][2]*CanvasWidth;
+				RenderList[i].height = DesignList[i][3]*CanvasHeight;
+			}
+			CanvasUpdate();
+			break;
+
+	}
 }
 
