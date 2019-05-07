@@ -10,7 +10,7 @@ function sendImg(type, Img){
 }
 
 function sendImgList(type, ImgList){
-	sendMessage([type].concat(ImgList));
+	sendMessage([type,ImgList]);
 }
 
 function sendMessage(msgArray) {

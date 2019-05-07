@@ -57,8 +57,8 @@ class DRN:
         self.margin = tf.placeholder(tf.float32, name='Margin')        
         
         #---------------------------------Design Feature Network----------------------------
-        self.PositiveImgs = tf.placeholder(tf.float32, [None, 192*256*4], name='PositiveImgs')
-        self.NegativeImgs = tf.placeholder(tf.float32, [None, 192*256*4], name='NegativeImgs')
+        self.PositiveImgs = tf.placeholder(tf.float32, [None, 192*256*3], name='PositiveImgs')
+        self.NegativeImgs = tf.placeholder(tf.float32, [None, 192*256*3], name='NegativeImgs')
 
         
         with tf.variable_scope('design_feature_network'):
@@ -66,10 +66,10 @@ class DRN:
             
             # Hidden layer 1 conv : [192 x 256]x3 --> [192 x 256]x64
             with tf.variable_scope('Cov1'):
-                w_conv1 = tf.get_variable('w1', regularizer=l2_reg, initializer=weight_variable([3,3,4,64]), collections=COLLECTIONS)
+                w_conv1 = tf.get_variable('w1', regularizer=l2_reg, initializer=weight_variable([3,3,3,64]), collections=COLLECTIONS)
                 b_conv1 = tf.get_variable('b1', regularizer=l2_reg, initializer=bias_variable([64]), collections=COLLECTIONS)
-                l_positive1 = tf.reshape(self.PositiveImgs, [-1,192,256,4])
-                l_negative1 = tf.reshape(self.NegativeImgs, [-1,192,256,4])
+                l_positive1 = tf.reshape(self.PositiveImgs, [-1,192,256,3])
+                l_negative1 = tf.reshape(self.NegativeImgs, [-1,192,256,3])
                 h_conv1_posi = tf.nn.relu(conv2d(l_positive1, w_conv1) + b_conv1)
                 h_conv1_neg = tf.nn.relu(conv2d(l_negative1, w_conv1) + b_conv1)
                 
@@ -179,16 +179,19 @@ class DRN:
         
     def Get_Score(self, img, Tag):
         TagData = [[0 if i != PersonDict[Tag] else 1 for i in range(0,16)]]
-        ImgData = img.reshape([-1,256*192*4])
+        print(TagData)
+        ImgData = img.reshape([-1,256*192*3])
         #somefunction ....
-        
+        print(ImgData)
         Score = self.sess.run(self.Score, feed_dict={ 
                                                         self.PositiveImgs: ImgData,
                                                         self.PositiveTags: TagData, 
                                                         self.keep_prob: 1.0
                                                        })
+        print(Score)
         return Score
     
     def Train(self):
+        DataSet = LoadingTrainingData()
         
         return 

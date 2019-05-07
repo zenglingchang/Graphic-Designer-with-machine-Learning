@@ -1,4 +1,4 @@
-import os, sys, time, json, base64, io
+import os, sys, time, json
 import asyncio
 import aiohttp
 import threading
@@ -58,25 +58,27 @@ async def wshandler(request):
     while True:
         try:
             msg = await ws.receive()
-            print(msg)
         except Exception as e:
             print(e)
             break
         try:
             if msg.type == aiohttp.WSMsgType.TEXT:
-                data = json.loads(msg.data)
-                if data[0] == 'GetScore':
-                    personlity = data[1]
-                    arr = Base642Array(data[2])
+                Command,data = json.loads(msg.data)
+                print('Recv Command:', Command)
+                if Command == 'GetScore':
+                    personlity = data[0]
+                    arr = Base642Array(data[1])
+                    print(arr)
                     DrNetwork = DRN()
                     Score = int(DrNetwork.Get_Score(arr, personlity).tolist()[0][0])
+                    print(Score)
                     await ws.send_str(json.dumps(['Score', Score]))
-                elif data[0] == 'GetDesign':
+                elif Command == 'GetDesign':
                     ElementList = []
                     DesList = []
-                    personlity = data[1]
-                    for i in range(2, len(data)):
-                        img = Base642Img(data[i])
+                    personlity = data[0]
+                    for i in range(1, len(data)):
+                        img = Base642Img(data[i], 'RGBA')
                         ElementList.append(img)
                         DesList.append([0,0,0.4,0.5])
                     DesList[0] = [0,0,1,1]
