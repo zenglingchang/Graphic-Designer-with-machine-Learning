@@ -6,6 +6,8 @@
 # python
 *.pyc
 __pycache__/
+
+# Private Data
 logs/
 my_net/
 data/

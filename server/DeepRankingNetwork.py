@@ -1,7 +1,7 @@
 import os,sys
 import numpy as np
 import tensorflow as tf
-
+from ImgDeal import *
 #-------------------------- Args -----------------------
 
 LEARNING_RATE = 0.05
@@ -178,8 +178,7 @@ class DRN:
         self.lr = LearningRate
         
     def Get_Score(self, img, Tag):
-        TagData = [[0 if i != Tag else 1 for i in range(0,16)]]
-        print(TagData)
+        TagData = [[0 if i != PersonDict[Tag] else 1 for i in range(0,16)]]
         ImgData = img.reshape([-1,256*192*4])
         #somefunction ....
         

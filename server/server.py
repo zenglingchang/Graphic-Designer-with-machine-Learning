@@ -8,7 +8,6 @@ from aiohttp import web
 from multiprocessing import Process
 from DeepRankingNetwork import DRN
 from ImgDeal import *
-Cute = 0
 
 #############################
 #
@@ -39,21 +38,6 @@ Description = {
         'function' : show,
     }
 }
-
-def Base642Array(base64Data):
-    imgdata = base64.b64decode(base64Data.replace('data:image/png;base64,',''))
-    image = io.BytesIO(imgdata)
-    img = Image.open(image)
-    img = img.resize((192,256), Image.ANTIALIAS)
-    TempArray = np.array(img)
-    return TempArray
-    
-def Base642Img(base64Data):
-    imgdata = base64.b64decode(base64Data.replace('data:image/png;base64,',''))
-    image = io.BytesIO(imgdata)
-    img = Image.open(image)
-    img = img.resize((192,256), Image.ANTIALIAS)
-    return img
     
 ###################################
 #
@@ -82,14 +66,16 @@ async def wshandler(request):
             if msg.type == aiohttp.WSMsgType.TEXT:
                 data = json.loads(msg.data)
                 if data[0] == 'GetScore':
-                    arr = Base642Array(data[1])
+                    personlity = data[1]
+                    arr = Base642Array(data[2])
                     DrNetwork = DRN()
-                    Score = int(DrNetwork.Get_Score(arr, Cute).tolist()[0][0])
+                    Score = int(DrNetwork.Get_Score(arr, personlity).tolist()[0][0])
                     await ws.send_str(json.dumps(['Score', Score]))
                 elif data[0] == 'GetDesign':
                     ElementList = []
                     DesList = []
-                    for i in range(1, len(data)):
+                    personlity = data[1]
+                    for i in range(2, len(data)):
                         img = Base642Img(data[i])
                         ElementList.append(img)
                         DesList.append([0,0,0.4,0.5])
