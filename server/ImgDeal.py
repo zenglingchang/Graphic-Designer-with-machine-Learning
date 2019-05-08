@@ -47,7 +47,7 @@ def LoadingTrainingData():
         dict[Dir] = []
         for Img in os.listdir(os.path.join(ImgTrainingPath, Dir)):
             ImgSrc = os.path.join(ImgTrainingPath, Dir, Img)
-            dict[Dir].append(Img2Array(Image.open(ImgSrc)))
+            dict[Dir].append(Img2Array(Image.open(ImgSrc)).reshape([256*192*3]))
         dict[Dir] = np.array(dict[Dir])
         print(len(dict[Dir]))
     return dict
@@ -59,7 +59,7 @@ def LoadingTestingData():
         dict[Dir] = []
         for Img in os.listdir(os.path.join(ImgTestingPath, Dir)):
             ImgSrc = os.path.join(ImgTestingPath, Dir, Img)
-            dict[Dir].append(Img2Array(Image.open(ImgSrc)))
+            dict[Dir].append(Img2Array(Image.open(ImgSrc)).reshape([256*192*3]))
         dict[Dir] = np.array(dict[Dir])
         print(len(dict[Dir]))
     return dict

@@ -27,10 +27,15 @@ def bias_variable( shape ):
 class DRN:
     def __init__(self):
         self.lr = LEARNING_RATE
-        
+        self.cost = []
         self._build_network()
         self.sess = tf.Session()
         
+        with tf.variable_scope('write'):
+            tf.summary.scalar("loss", self.loss)
+            self.merged_summary = tf.summary.merge_all()
+            self.writer = tf.summary.FileWriter(os.path.join(sys.path[0], 'logs/'), self.sess.graph)
+            
         if os.path.isfile(os.path.join(sys.path[0], r'my_net/checkpoint')):
             self._load_data()
         else:
@@ -167,31 +172,77 @@ class DRN:
             D = tf.nn.relu(tf.reshape(h_op_neg, [-1]) - tf.reshape(h_op_posi, [-1,1]) + self.margin)
             l2_loss = tf.add_n(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
             self.loss = tf.reduce_sum(D) + l2_loss
-        
+            
         with tf.variable_scope('train'):
             self._train_op = tf.train.RMSPropOptimizer(self.lr).minimize(self.loss)
             
-    def Draw_Graph(self):
-        tf.summary.FileWriter(os.path.join(sys.path[0], 'logs/'), self.sess.graph)
         
     def Set_Learning_Rate(self, LearningRate):
         self.lr = LearningRate
         
     def Get_Score(self, img, Tag):
-        TagData = [[0 if i != PersonDict[Tag] else 1 for i in range(0,16)]]
-        print(TagData)
-        ImgData = img.reshape([-1,256*192*3])
-        #somefunction ....
-        print(ImgData)
-        Score = self.sess.run(self.Score, feed_dict={ 
-                                                        self.PositiveImgs: ImgData,
-                                                        self.PositiveTags: TagData, 
+        return self.sess.run(self.Score, feed_dict={ 
+                                                        self.PositiveImgs: img.reshape([-1,256*192*3]),
+                                                        self.PositiveTags: [[0 if i != PersonDict[Tag] else 1 for i in range(0,16)]], 
                                                         self.keep_prob: 1.0
                                                        })
-        print(Score)
-        return Score
     
-    def Train(self):
+    def Train(self, Times, SaveTimes = 10):
         DataSet = LoadingTrainingData()
+        LearnStepCounter = 0
+        while LearnStepCounter < Times:
+            if (LearnStepCounter + 1)  % SaveTimes == 0:
+                self._write_data()
+            print('Learn Times:', LearnStepCounter)
+            for Positive in DataSet:
+                for Negative in DataSet:
+                    if Positive == Negative:
+                        continue
+                    Tag = [0 if i != PersonDict[Positive] else 1 for i in range(0,16)]
+                    _, cost,summary  = self.sess.run([self._train_op,self.loss, self.merged_summary],
+                                    feed_dict={
+                                        self.PositiveImgs: DataSet[Positive],
+                                        self.PositiveTags: np.tile(Tag, len(DataSet[Positive])).reshape([-1,16]),
+                                        self.NegativeImgs: DataSet[Negative],
+                                        self.NegativeTags: np.tile(Tag, len(DataSet[Negative])).reshape([-1,16]),
+                                        self.keep_prob: 0.50,
+                                        self.margin: 100
+                                        })
+                    print(Positive, Negative, cost, summary)
+            LearnStepCounter += 1
         
-        return 
+        return
+        
+    def TestLoss(self):
+        DataSet = LoadingTestingData()
+        Loss = 0
+        for Positive in DataSet:
+            for Negative in DataSet:
+                if Positive == Negative:
+                    continue
+                Tag = [0 if i != PersonDict[Positive] else 1 for i in range(0,16)]
+                Loss += self.sess.run(self.loss,
+                                feed_dict={
+                                    self.PositiveImgs: DataSet[Positive],
+                                    self.PositiveTags: np.tile(Tag, len(DataSet[Positive])).reshape([-1,16]),
+                                    self.NegativeImgs: DataSet[Negative],
+                                    self.NegativeTags: np.tile(Tag, len(DataSet[Negative])).reshape([-1,16]),
+                                    self.keep_prob: 1.00,
+                                    })
+                print(Positive, Negative, cost)
+        return Loss
+        
+if __name__ == '__main__':
+    drNetWork = DRN()
+    while 1:
+        Input = input('NetWork Manager:')
+        if Input == 'Exit':
+            break
+        elif Input == 'Train':
+            times = int(input('Train Times:'))
+            drNetWork.Train(times)
+        elif Input == 'Test':
+            print("Loss: ", drNetWork.TestLoss())
+        else:
+            print('Can\'t find Command: %s ' % Input)
+            help()
