@@ -49,7 +49,6 @@ def LoadingTrainingData():
             ImgSrc = os.path.join(ImgTrainingPath, Dir, Img)
             dict[Dir].append(Img2Array(Image.open(ImgSrc)).reshape([256*192*3]))
         dict[Dir] = np.array(dict[Dir])
-        print(len(dict[Dir]))
     return dict
     
 def LoadingTestingData():
@@ -61,7 +60,6 @@ def LoadingTestingData():
             ImgSrc = os.path.join(ImgTestingPath, Dir, Img)
             dict[Dir].append(Img2Array(Image.open(ImgSrc)).reshape([256*192*3]))
         dict[Dir] = np.array(dict[Dir])
-        print(len(dict[Dir]))
     return dict
     
 def ClearDataSet():
@@ -71,7 +69,8 @@ def ClearDataSet():
         for Dir in os.listdir(Path):
             for Img in os.listdir(os.path.join(Path,Dir)):
                 os.remove(os.path.join(Path, Dir, Img))
-                
+    print('Clear success!')
+    
 if __name__ == '__main__':
     ImgRoot = os.path.join(sys.path[0], 'data')
     ImgBuffer = os.path.join(ImgRoot, 'src')

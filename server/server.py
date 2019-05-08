@@ -70,7 +70,7 @@ async def wshandler(request):
                     arr = Base642Array(data[1])
                     print(arr)
                     DrNetwork = DRN()
-                    Score = int(DrNetwork.Get_Score(arr, personlity).tolist()[0][0])
+                    Score = int(DrNetwork.GetScore(arr, personlity).tolist()[0][0])
                     print(Score)
                     await ws.send_str(json.dumps(['Score', Score]))
                 elif Command == 'GetDesign':
