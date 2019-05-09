@@ -56,43 +56,9 @@ def bias_variable( shape , value = 0.1):
 def leaky_relu(input):
     return tf.nn.leaky_relu(input, alpha=0.2)
 
-def batch_normal(x, is_training):
-    x_shape = x.get_shape()
-    params_shape = x_shape[-1:]
-    axis = list(range(len(x_shape) - 1))
-    beta = _get_variable('b',
-                         params_shape,
-                         initializer=tf.zeros_initializer)
-                         
-    gamma = _get_variable('g',
-                          params_shape,
-                          initializer=tf.ones_initializer)
-
-    moving_mean = _get_variable('moving_mean',
-                                params_shape,
-                                initializer=tf.zeros_initializer,
-                                trainable=False)
-
-    moving_variance = _get_variable('moving_variance',
-                                    params_shape,
-                                    initializer=tf.ones_initializer,
-                                    trainable=False)
-
-    # These ops will only be preformed when training.
-    mean, variance = tf.nn.moments(x, axis)
-    update_moving_mean = moving_averages.assign_moving_average(moving_mean, mean, BN_DECAY)
-    update_moving_variance = moving_averages.assign_moving_average(
-        moving_variance, variance, BN_DECAY)
-    tf.add_to_collection(UPDATE_OPS_COLLECTION, update_moving_mean)
-    tf.add_to_collection(UPDATE_OPS_COLLECTION, update_moving_variance)
-
-    mean, variance = control_flow_ops.cond(
-        is_training, lambda: (mean, variance),
-        lambda: (moving_mean, moving_variance))
-
-    x = tf.nn.batch_normalization(x, mean, variance, beta, gamma, BN_EPSILON)
-
-    return x
+def batch_normal(layer, is_training):
+    return tf.layers.batch_normalization(layer, training=is_training)
+    
 #-----------------------  NetWork Class ----------------------
 
 class DRN:
@@ -100,7 +66,7 @@ class DRN:
     
         self.lr = DEAFULT_LEARNING_RATE
         self.is_training = tf.convert_to_tensor(True,dtype='bool',name='is_training')
-
+        self.use_shuffle = tf.convert_to_tensor(False,dtype='bool',name='use_shuffle')
         self._build_network()
         self.sess = tf.Session()
             
@@ -130,16 +96,21 @@ class DRN:
         self.keep_prob = tf.placeholder(tf.float32, name='Keep_Prob')        
         self.margin = tf.placeholder(tf.float32, name='Margin')        
         self.AllLoss = tf.placeholder(tf.float32, name='AllLoss')
-
+        
         #---------------------------------Design Feature Network----------------------------
         self.PositiveImgs = tf.placeholder(tf.float32, [None, None], name='PositiveImgs')
         self.NegativeImgs = tf.placeholder(tf.float32, [None, None], name='NegativeImgs')
+        self.ShuffleList = tf.placeholder(tf.int32, [None], name="ShuffleList")
+        self.ReShuffleList = tf.placeholder(tf.int32, [None], name='ReShuffleList')
+        
         PosBatchSize = tf.shape(self.PositiveImgs)[0]
         NegBatchSize = tf.shape(self.NegativeImgs)[0]
         Batch = control_flow_ops.cond(
             tf.equal(tf.shape(self.NegativeImgs)[1], 0), lambda: self.PositiveImgs,
             lambda: tf.concat([self.PositiveImgs, self.NegativeImgs], axis = 0))
-
+        Batch = control_flow_ops.cond(
+            self.use_shuffle, lambda: tf.gather(Batch, self.ShuffleList),
+            lambda: Batch)
         with tf.variable_scope('design_feature_network'):
             COLLECTIONS = ['COV_NETWORK_VARIABLES', tf.GraphKeys.GLOBAL_VARIABLES]
             
@@ -253,51 +224,68 @@ class DRN:
         #----------------------------------------    Output    -----------------------------------  
         with tf.variable_scope('Output'):
             w_op = tf.get_variable('w_op', regularizer=l2_reg, initializer=weight_variable([128, 1]), collections=COLLECTIONS)
-            self.Score = h_op = tf.matmul(h_fc4, w_op)
-                
+            self.Score = tf.matmul(h_fc4, w_op)
+            Output = control_flow_ops.cond(
+            self.use_shuffle, lambda: tf.gather(self.Score, self.ReShuffleList),
+            lambda: self.Score)
+            print(Output.get_shape())
+            self.LayerOutput[variable_scope] = tf.reshape(self.Score ,[-1])  
         #----------------------------------------    Loss    -----------------------------------    
         with tf.variable_scope('loss') as variable_scope:
-            h_op = tf.reshape(h_op, [-1])
-            op_neg = tf.slice(h_op, [0], [PosBatchSize])
-            op_posi = tf.slice(h_op, [PosBatchSize], [NegBatchSize])
+            h_op = tf.reshape(Output, [-1])
+            op_posi = tf.slice(h_op, [0], [PosBatchSize])
+            op_neg = tf.slice(h_op, [PosBatchSize], [NegBatchSize])
             D = tf.nn.relu(tf.reshape(op_neg, [-1]) - tf.reshape(op_posi, [-1,1]) + self.margin)
             self.loss = tf.reduce_mean(D) 
             l2_loss = tf.add_n(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
             
-            self.LayerOutput[variable_scope] = D
+            self.LayerOutput[variable_scope] = [op_posi,op_neg,D]
             
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         
         with tf.control_dependencies(update_ops):
-            self._train_op = tf.train.AdadeltaOptimizer(learning_rate = self.lr).minimize(self.loss + l2_loss)
+            self._train_op = tf.train.MomentumOptimizer(learning_rate=self.lr, momentum=0.5).minimize(self.loss + l2_loss)
             
         with tf.variable_scope('write'):
             tf.summary.scalar("loss", self.AllLoss)
             
         self.merged_summary = tf.summary.merge_all()
         
-    def _GetLayerOut(self, img, NegImgs, Tag, UseBn):
-        Imgs = img.reshape([-1,256*192*3])
-        self.Set_Is_Training(UseBn)
-        for LayerName in self.LayerOutput:
-            output = self.sess.run(self.LayerOutput[LayerName], feed_dict={ 
-                                                        self.PositiveImgs: Imgs,
-                                                        self.NegativeImgs: NegImgs,
-                                                        self.Tag : [0 if i != PersonDict[Tag] else 1 for i in range(0,16)], 
-                                                        self.keep_prob: 1.0,
-                                                        self.margin: 5
-                                                       })
-            print(LayerName.name, output)
-            
     def Set_Learning_Rate(self, LearningRate):
         self.lr = LearningRate
         
     def Set_Is_Training(self, is_training):
         self.is_training = tf.convert_to_tensor(is_training, dtype='bool', name='is_training')
+    
+    def Set_Use_Shuffle(self, use_shuffle):
+        self.use_shuffle = tf.convert_to_tensor(False,dtype='bool',name='use_shuffle')
         
-    def GetScore(self, img, Tag):
+    def _GetLayerOut(self, img, NegImgs, Tag, is_training = False, use_shuffle = True):
         Imgs = img.reshape([-1,256*192*3])
-        self.Set_Is_Training(False)
+        self.Set_Is_Training(is_training)
+        self.Set_Use_Shuffle(use_shuffle)
+        print('*************************:',len(Imgs),len(NegImgs))
+        ShuffleList = np.random.permutation(len(Imgs)+len(NegImgs))
+        ReShuffleList = [0 for i in range(0,len(ShuffleList))]
+        for i in range(0,len(ShuffleList)):
+            ReShuffleList[ShuffleList[i]] = i
+        for LayerName in self.LayerOutput:
+            output = self.sess.run(self.LayerOutput[LayerName], feed_dict={ 
+                                                        self.PositiveImgs: Imgs[np.random.permutation(int(len(Imgs)*0.6)),:],
+                                                        self.NegativeImgs: NegImgs[np.random.permutation(int(len(NegImgs)*0.6)),:],
+                                                        self.ShuffleList: ShuffleList,
+                                                        self.ReShuffleList: ReShuffleList,          
+                                                        self.Tag : [0 if i != PersonDict[Tag] else 1 for i in range(0,16)], 
+                                                        self.keep_prob: 1.0,
+                                                        self.margin: 5
+                                                       })
+            print(LayerName.name, output)
+        
+    def GetScore(self, img, Tag, is_training = False, use_shuffle = False):
+        Imgs = img.reshape([-1,256*192*3])
+        self.Set_Is_Training(is_training)
+        self.Set_Use_Shuffle(use_shuffle)
+        print(len(Imgs))
         return np.array(self.sess.run(self.Score, feed_dict={ 
                                                         self.PositiveImgs: Imgs,
                                                         self.NegativeImgs: [[]],
@@ -305,10 +293,10 @@ class DRN:
                                                         self.keep_prob: 1.0
                                                        })).reshape([-1])
     
-    def Train(self, Times, SaveTimes = 10, keep_prob = 0.5):
-        self.Set_Is_Training(False)
+    def Train(self, Times, SaveTimes = 10, keep_prob = 0.5, is_training = True, use_shuffle = True):
         LearnStepCounter = 0
-        self.Set_Is_Training(True)
+        self.Set_Is_Training(is_training)
+        self.Set_Use_Shuffle(use_shuffle)
         DataSet = LoadingTrainingData()
         Writer = tf.summary.FileWriter(os.path.join(sys.path[0], 'logs/', GetCurTime() + r'/'), self.sess.graph)
         while LearnStepCounter < Times:
@@ -318,21 +306,29 @@ class DRN:
                 print(self.GetScore(DataSet['terror'], 'cute'))
             print('Learn Times:', LearnStepCounter)
             Loss = 0.0
-            #for Positive in DataSet:
-                #for Negative in DataSet:
-                  #  if Positive == Negative:
-                     #   continue
-            Tag = [0 if i != PersonDict['cute'] else 1 for i in range(0,16)]
-            _, cost  = self.sess.run([self._train_op,self.loss],
-                            feed_dict={
-                                self.PositiveImgs: DataSet['cute'],
-                                self.NegativeImgs: DataSet['terror'],
-                                self.Tag: Tag, 
-                                self.keep_prob: keep_prob,
-                                self.margin: 5
-                                })
-            print(cost)
-            Loss += cost
+            for Positive in DataSet:
+                for Negative in DataSet:
+                    if Positive == Negative:
+                        continue
+                    Imgs = DataSet[Positive]
+                    NegImgs = DataSet[Negative]
+                    ShuffleList = np.random.permutation(len(Imgs)+len(NegImgs))
+                    ReShuffleList = [0 for i in range(0,len(ShuffleList))]
+                    for i in range(0,len(ShuffleList)):
+                        ReShuffleList[ShuffleList[i]] = i
+                    Tag = [0 if i != PersonDict['cute'] else 1 for i in range(0,16)]
+                    _, cost  = self.sess.run([self._train_op,self.loss],
+                                    feed_dict={
+                                        self.PositiveImgs: Imgs,
+                                        self.NegativeImgs: NegImgs,
+                                        self.ShuffleList: ShuffleList,
+                                        self.ReShuffleList: ReShuffleList,
+                                        self.Tag: Tag, 
+                                        self.keep_prob: keep_prob,
+                                        self.margin: 5
+                                        })
+                    Loss += cost
+            print('Train Loss:',Loss)
             summary = self.sess.run(self.merged_summary,
                                 feed_dict={
                                     self.AllLoss:Loss,
@@ -340,10 +336,12 @@ class DRN:
             Writer.add_summary(summary, LearnStepCounter)
             LearnStepCounter += 1
             print('TestLoss:', self.TestLoss())
+        self.Set_Use_Shuffle(False)
         return
         
-    def TestLoss(self):
-        self.Set_Is_Training(False)
+    def TestLoss(self, is_training = False, use_shuffle = False):
+        self.Set_Is_Training(is_training)
+        self.Set_Use_Shuffle(use_shuffle)
         DataSet = LoadingTestingData()
         Loss = 0
         ''' for Positive in DataSet:
@@ -396,7 +394,7 @@ if __name__ == '__main__':
                 continue
             for Label in DataSet:
                 Scores = drNetWork.GetScore(DataSet[Label], Tag)
-                print(Scores)
+                print(Label+'\n', Scores)
         else:
             print('Can\'t find Command: %s ' % Input)
             help()
