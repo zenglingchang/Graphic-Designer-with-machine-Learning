@@ -16,7 +16,7 @@ from ImgDeal import *
 ##############################
 
 def show():
-    t = threading.Thread(target=lambda:os.system('tensorboard --logdir=logs'), args=())
+    t = threading.Thread(target=lambda:os.system('tensorboard --host=127.0.0.1 --logdir=logs'), args=())
     t.setDaemon(True)
     t.start()
     time.sleep(3)
