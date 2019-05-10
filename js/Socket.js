@@ -26,7 +26,7 @@ function messageHandler(e){
 	json = JSON.parse(e.data);
 	switch (json[0]){
 		case "Score":
-			$("#Score")[0].innerHTML = json[1];
+			DrawScore(json[1]);
 			break;
 		case "Design":
 			DesignList = json[1];

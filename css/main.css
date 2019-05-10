@@ -63,29 +63,25 @@ html, body {
     position:absolute;
 }
 
-#ScoreBox{
-	width: 75%;
-    margin-left:15%;
-    padding-top:10%;
-    padding-bottom:2px;
-    position:absolute;
-}
-
-#PerChoose{
-    width: 45%;
-    margin-top:30%;
-    margin-left:5%;
+#ScoreCanvas{
+    float:left;
+    margin-top:10%;
 }
 
 #GetScore{
-    margin-top:30%;
+    margin-top:35%;
     margin-left:5%;
-    position:absolute;
+}
+
+#PerChoose{
+    width: 50%;
+    margin-top:20%;
+    margin-left:10%;
 }
 
 #ReDesign{
-    margin-top:50%;
-    margin-left:25%;
+    margin-top:20%;
+    margin-left:5%;
     position:absolute;
 }
 
@@ -111,7 +107,6 @@ html, body {
 
 #text-toolbar {
 	z-index:100;
-	position: fixed;
 }
 
 #text-rect {

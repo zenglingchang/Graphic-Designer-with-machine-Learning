@@ -6,10 +6,7 @@ function Init(){
         ResetCanvas();
     }
 	document.getElementById('GetScore').onclick = function() {
-        if ($('#PerChoose')[0].value != "NoChoose")
-            sendImg('GetScore', [$('#PerChoose')[0].value, GetCanvasContent()]);
-        else
-            alert("Please Choose personality!");
+        sendImg('GetScore', [GetCanvasContent()]);
 	};
 	document.getElementById('ReDesign').onclick = function() {
         if ($('#PerChoose')[0].value != "NoChoose")

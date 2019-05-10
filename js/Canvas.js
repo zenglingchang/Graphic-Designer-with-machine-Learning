@@ -176,6 +176,7 @@ function SetChoose(index){
     }
     return dfd.promise();
 }
+
 //***********************************
 //
 // Mouse & Window Event Function 
@@ -206,14 +207,18 @@ function WindowUpdate(){
     $('#right').height(  document.body.clientHeight - $('#head')[0].clientHeight );
     $('#left').height (  document.body.clientHeight - $('#head')[0].clientHeight );
     $('#right').width  (  document.body.clientWidth - $('#left').width()  );
-    $("#right").css( 'marginLeft', $("#left").width() );
-    $('#srcCanvas')[0].width  = $("#right").width()  ;
-    $('#srcCanvas')[0].height = $("#right").height() ;
-	
+    $("#right").css('marginLeft', $("#left").width())  ;
+    $('#srcCanvas')[0].width    = $("#right").width()  ;
+    $('#srcCanvas')[0].height   = $("#right").height() ;
+	$('#ScoreCanvas')[0].width  = $("#left").width()/2 ;
+    $('#ScoreCanvas')[0].height = $("#left").width()/2 ;
+    $("#ScoreCanvas").css('marginLeft', $("#left").width()/10);
+    DrawScore([])
+    
 	// Update text editor
 	$(".toolbar").css('marginLeft', $('#left').width());
 	$('.toolbar').css('background-color','white');
-	$('.toolbar').css('position', 'fixed');
+	//$('.toolbar').css('position', 'fixed');
 	$('.toolbar').css('z-index',100);
 	$('.toolbar').css('width','100%');
 	
@@ -345,6 +350,64 @@ function DrawElementToolbar(){
 	$('#element-toolbar').css('marginTop', pos.y);
 	$('#element-toolbar').css('visibility', '');
 	
+}
+
+//for ScoreCanvas
+function DrawScore(ScoreList){
+    ctx = $('#ScoreCanvas')[0].getContext("2d");
+    R = $('#ScoreCanvas')[0].height/2;
+    //draw backgroud
+    ctx.beginPath();
+    for (var i=0; i<5; i++){
+        ctx.lineTo(Math.cos((18 + i*72)/ 180 *Math.PI)*R + R, -Math.sin((18 + i*72)/180*Math.PI)*R + R);
+    }
+    ctx.closePath();
+    ctx.fillStyle = '#ddffff';
+    ctx.fill();
+    
+    //draw line
+    ctx.lineWidth = 0.5;
+    ctx.setLineDash([7,3]);
+    ctx.strokeStyle = '#aaaaaa';
+    for (var index =0 ; index <= 5;index++){
+        if (index == 0)
+        {
+            for (var i=0; i<5; i++){
+                ctx.beginPath();
+                ctx.lineTo(Math.cos((18 + i*72)/ 180 *Math.PI)*R + R, -Math.sin((18 + i*72)/180*Math.PI)*R + R);
+                ctx.lineTo(R,R);
+                ctx.closePath();
+                ctx.stroke();
+            continue;
+        }
+        }
+        if (index == 5){
+            ctx.setLineDash([]);
+            ctx.strokeStyle = '#060606';
+        }
+        var r = R*(index/5);
+        ctx.beginPath();
+        for (var i=0; i<5; i++){
+            ctx.lineTo(Math.cos((18 + i*72)/ 180 *Math.PI)*r + R, -Math.sin((18 + i*72)/180*Math.PI)*r + R);
+        }
+        ctx.closePath();
+        ctx.stroke();
+    }
+    
+    //draw ScoreList
+    ctx.beginPath();
+    ScoreList.forEach( function(e, i){
+        ctx.lineTo(Math.cos((18 + i*72)/ 180 *Math.PI)*R*e + R, -Math.sin((18 + i*72)/180*Math.PI)*R*e + R);
+    })
+    ctx.closePath();
+    ctx.stroke();
+    ScoreList.forEach( function(e, i){
+        ctx.beginPath();
+        ctx.arc(Math.cos((18 + i*72)/ 180 *Math.PI)*R*e + R, -Math.sin((18 + i*72)/180*Math.PI)*R*e + R, 3, 0, Math.PI*2, true);
+        ctx.fillStyle = "white";
+        ctx.fill();
+        ctx.stroke();
+    })
 }
 
 function DrawChosenRect(){
