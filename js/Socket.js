@@ -5,12 +5,12 @@ function ConnectInit(){
     ws.onmessage = messageHandler;
 }
 
-function sendImg(type, Img){
-	sendMessage([type,Img]);
+function sendImg(command, Img){
+	sendMessage([command,Img]);
 }
 
-function sendImgList(type, ImgList){
-	sendMessage([type,ImgList]);
+function sendImgList(command, ImgList){
+	sendMessage([command,ImgList]);
 }
 
 function sendMessage(msgArray) {

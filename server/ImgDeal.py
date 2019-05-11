@@ -42,24 +42,34 @@ def GetDesginImg(ElementList, DesignList):
     
 def LoadingTrainingData():
     ImgTrainingPath = os.path.join(sys.path[0], r'data/train')
-    dict = {}
+    dict = {
+        "Labels": [],
+        "Imgs" : []
+    }
     for Dir in os.listdir(ImgTrainingPath):
-        dict[Dir] = []
+        Label = [ 1 if i == PersonDict[Dir] else 0 for i in range(0,5)]
         for Img in os.listdir(os.path.join(ImgTrainingPath, Dir)):
-            ImgSrc = os.path.join(ImgTrainingPath, Dir, Img)
-            dict[Dir].append(Img2Array(Image.open(ImgSrc)).reshape([256*192*3]))
-        dict[Dir] = np.array(dict[Dir])
+            ImgSrc = os.path.join(ImgTrainingPath , Dir, Img)
+            dict['Imgs'].append(Img2Array(Image.open(ImgSrc)).reshape([256*192*3]))
+            dict['Labels'].append(Label)
+    dict['Imgs'] = np.array(dict['Imgs'])
+    dict['Labels'] = np.array(dict['Labels'])
     return dict
     
 def LoadingTestingData():
     ImgTestingPath = os.path.join(sys.path[0], r'data/test')
-    dict = {}
+    dict = {
+        "Labels": [],
+        "Imgs" : []
+    }
     for Dir in os.listdir(ImgTestingPath):
-        dict[Dir] = []
+        Label = [ 1 if i == PersonDict[Dir] else 0 for i in range(0,5)]
         for Img in os.listdir(os.path.join(ImgTestingPath, Dir)):
             ImgSrc = os.path.join(ImgTestingPath, Dir, Img)
-            dict[Dir].append(Img2Array(Image.open(ImgSrc)).reshape([256*192*3]))
-        dict[Dir] = np.array(dict[Dir])
+            dict['Imgs'].append(Img2Array(Image.open(ImgSrc)).reshape([256*192*3]))
+            dict['Labels'].append(Label)
+    dict['Imgs'] = np.array(dict['Imgs'])
+    dict['Labels'] = np.array(dict['Labels'])
     return dict
     
 def ClearDataSet():

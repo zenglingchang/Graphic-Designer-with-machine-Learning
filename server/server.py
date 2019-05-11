@@ -63,14 +63,12 @@ async def wshandler(request):
             break
         try:
             if msg.type == aiohttp.WSMsgType.TEXT:
-                Command,data = json.loads(msg.data)
+                Command,img = json.loads(msg.data)
                 print('Recv Command:', Command)
                 if Command == 'GetScore':
-                    personlity = data[0]
-                    arr = Base642Array(data[1])
-                    print(arr)
+                    arr = Base642Array(img)
                     DrNetwork = DRN()
-                    Score = int(DrNetwork.GetScore(arr, personlity).tolist()[0][0])
+                    Score = int(DrNetwork.GetScore(arr, personlity).tolist()[0])
                     print(Score)
                     await ws.send_str(json.dumps(['Score', Score]))
                 elif Command == 'GetDesign':

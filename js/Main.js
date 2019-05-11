@@ -6,7 +6,7 @@ function Init(){
         ResetCanvas();
     }
 	document.getElementById('GetScore').onclick = function() {
-        sendImg('GetScore', [GetCanvasContent()]);
+        sendImg('GetScore', GetCanvasContent());
 	};
 	document.getElementById('ReDesign').onclick = function() {
         if ($('#PerChoose')[0].value != "NoChoose")
