@@ -47,13 +47,13 @@ Description = {
 
 async def handle(request):
     index = open(os.path.join(sys.path[0], '../index.html'), 'rb')
-    print(os.path.join(sys.path[0], '../index.html'))
     content = index.read()
     return web.Response(body=content, content_type='text/html')
 
 async def wshandler(request):
     app = request.app
     ws = web.WebSocketResponse()
+    DrNetwork = DRN()
     await ws.prepare(request)
     while True:
         try:
@@ -63,25 +63,21 @@ async def wshandler(request):
             break
         try:
             if msg.type == aiohttp.WSMsgType.TEXT:
-                Command,img = json.loads(msg.data)
+                Command,data = json.loads(msg.data)
                 print('Recv Command:', Command)
                 if Command == 'GetScore':
-                    arr = Base642Array(img)
-                    DrNetwork = DRN()
+                    arr = Base642Array(data)
                     Score = int(DrNetwork.GetScore(arr, personlity).tolist()[0])
                     print(Score)
                     await ws.send_str(json.dumps(['Score', Score]))
                 elif Command == 'GetDesign':
                     ElementList = []
-                    DesList = []
                     personlity = data[0]
                     for i in range(1, len(data)):
                         img = Base642Img(data[i], 'RGBA')
                         ElementList.append(img)
-                        DesList.append([0,0,0.4,0.5])
-                    DesList[0] = [0,0,1,1]
-                    Back = GetDesginImg(ElementList, DesList)
-                    Back.show()
+                    DesList = DrNetwork.ReDesign(ElementList)
+                    
                     await ws.send_str(json.dumps(['Design', DesList]))
         except Exception as e:
             print(e)

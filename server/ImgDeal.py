@@ -1,4 +1,4 @@
-import os, io, sys, base64, random
+import os, io, sys, copy, base64, random
 import numpy as np
 from PIL import Image
 
@@ -30,7 +30,7 @@ def Img2Array(Img, type = 'RGB'):
     return TempArray
     
 def GetDesginImg(ElementList, DesignList):
-    BackGroud = ElementList[0]
+    BackGroud = copy.deepcopy(ElementList[0])
     (Width, Height) = BackGroud.size
     for i in range(1,len(ElementList)):
         (X0,Y0,ScaleX,ScaleY) = DesignList[i]
