@@ -345,7 +345,7 @@ function DrawElementToolbar(){
 		$('#element-toolbar').css('visibility', 'hidden');
 		return ;
 	}
-	pos = CanvasToWindow(CanvasX + RenderList[ChooseIndex].x - 50, CanvasY + RenderList[ChooseIndex].y);
+	pos = CanvasToWindow(CanvasX + CenterenderList[ChooseIndex].x - 50, CanvasY + CenterenderList[ChooseIndex].y);
 	$('#element-toolbar').css('marginLeft', pos.x);
 	$('#element-toolbar').css('marginTop', pos.y);
 	$('#element-toolbar').css('visibility', '');
@@ -354,12 +354,14 @@ function DrawElementToolbar(){
 
 //for ScoreCanvas
 function DrawScore(ScoreList){
+    dict = ['cute', 'terror', 'fashion', 'business','festive']
     ctx = $('#ScoreCanvas')[0].getContext("2d");
-    R = $('#ScoreCanvas')[0].height/2;
+    R = $('#ScoreCanvas')[0].height/2 - 25;
+    Center = $('#ScoreCanvas')[0].height/2;
     //draw backgroud
     ctx.beginPath();
     for (var i=0; i<5; i++){
-        ctx.lineTo(Math.cos((18 + i*72)/ 180 *Math.PI)*R + R, -Math.sin((18 + i*72)/180*Math.PI)*R + R);
+        ctx.lineTo(Math.cos((18 + i*72)/ 180 *Math.PI)*R + Center, -Math.sin((18 + i*72)/180*Math.PI)*R + Center);
     }
     ctx.closePath();
     ctx.fillStyle = '#ddffff';
@@ -372,12 +374,16 @@ function DrawScore(ScoreList){
     for (var index =0 ; index <= 5;index++){
         if (index == 0)
         {
+            ctx.font='11px Arial';
+            ctx.fillStyle='black';
+            ctx.textAlign = 'center';
             for (var i=0; i<5; i++){
                 ctx.beginPath();
-                ctx.lineTo(Math.cos((18 + i*72)/ 180 *Math.PI)*R + R, -Math.sin((18 + i*72)/180*Math.PI)*R + R);
-                ctx.lineTo(R,R);
+                ctx.lineTo(Math.cos((18 + i*72)/ 180 *Math.PI)*R + Center, -Math.sin((18 + i*72)/180*Math.PI)*R + Center);
+                ctx.lineTo(Center,Center);
                 ctx.closePath();
                 ctx.stroke();
+                ctx.fillText(dict[i], Math.cos((18 + i*72)/ 180 *Math.PI)*(R+8) + Center, -Math.sin((18 + i*72)/180*Math.PI)*(R+8) + Center);
             continue;
         }
         }
@@ -388,7 +394,7 @@ function DrawScore(ScoreList){
         var r = R*(index/5);
         ctx.beginPath();
         for (var i=0; i<5; i++){
-            ctx.lineTo(Math.cos((18 + i*72)/ 180 *Math.PI)*r + R, -Math.sin((18 + i*72)/180*Math.PI)*r + R);
+            ctx.lineTo(Math.cos((18 + i*72)/ 180 *Math.PI)*r + Center, -Math.sin((18 + i*72)/180*Math.PI)*r + Center);
         }
         ctx.closePath();
         ctx.stroke();
@@ -397,13 +403,13 @@ function DrawScore(ScoreList){
     //draw ScoreList
     ctx.beginPath();
     ScoreList.forEach( function(e, i){
-        ctx.lineTo(Math.cos((18 + i*72)/ 180 *Math.PI)*R*e + R, -Math.sin((18 + i*72)/180*Math.PI)*R*e + R);
+        ctx.lineTo(Math.cos((18 + i*72)/ 180 *Math.PI)*R*e + Center, -Math.sin((18 + i*72)/180*Math.PI)*R*e + Center);
     })
     ctx.closePath();
     ctx.stroke();
     ScoreList.forEach( function(e, i){
         ctx.beginPath();
-        ctx.arc(Math.cos((18 + i*72)/ 180 *Math.PI)*R*e + R, -Math.sin((18 + i*72)/180*Math.PI)*R*e + R, 3, 0, Math.PI*2, true);
+        ctx.arc(Math.cos((18 + i*72)/ 180 *Math.PI)*R*e + Center, -Math.sin((18 + i*72)/180*Math.PI)*R*e + Center, 3, 0, Math.PI*2, true);
         ctx.fillStyle = "white";
         ctx.fill();
         ctx.stroke();

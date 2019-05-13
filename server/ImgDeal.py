@@ -5,7 +5,9 @@ from PIL import Image
 PersonDict = {
     "cute":0,
     "terror":1,
-    "fashion":2
+    "fashion":2,
+    "business":3,
+    "festive":4
 }
 
 def Base642Array(base64Data, type = 'RGB'):
@@ -54,6 +56,7 @@ def LoadingTrainingData():
             dict['Labels'].append(Label)
     dict['Imgs'] = np.array(dict['Imgs'])
     dict['Labels'] = np.array(dict['Labels'])
+    print("Training DataSet Size:",len(dict['Imgs']))
     return dict
     
 def LoadingTestingData():
@@ -87,6 +90,8 @@ if __name__ == '__main__':
     ImgTestPath = os.path.join(ImgRoot, 'test')
     ImgTrainPath = os.path.join(ImgRoot, 'train')
     for Dir in os.listdir(ImgBuffer):
+        os.mkdir(os.path.join(ImgTestPath,Dir))
+        os.mkdir(os.path.join(ImgTrainPath,Dir))
         for Img in os.listdir(os.path.join(ImgBuffer,Dir)):
             ImgSrc = os.path.join(ImgBuffer, Dir, Img)
             ImgDst = os.path.join(ImgTrainPath if random.random() > 0.2 else ImgTestPath, Dir, Img)

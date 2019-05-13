@@ -109,6 +109,25 @@ class DRN:
         #---------------------------------Design Feature Network----------------------------
         self.Imgs = tf.placeholder(tf.float32, [None, None], name='Imgs')
         self.Labels = tf.placeholder(tf.float32, [None, 5], name='Labels')
+        '''
+        self.backgroud = tf.placeholder(tf.float32, [192*256*3], name='backgroud')
+        self.ElementList = tf.placeholder(tf.float32, [None, 192*256*4], name='ElementList')
+        self.Tags = tf.placeholder(tf.float32,[None, 5], name='Tags')
+        def paste(backgroud, element, Design):
+            dx = tf.ceil(Design[0])
+            dy = Design[2]
+            tf.equal(tf.pad(x,[[0,3],[2,4]],"CONSTANT"),0)
+            tf.where
+        def con(index, backgroud, ElementList, DesignList, Tag):
+            return index<tf.shape(ElementList)[0]
+        
+        def body(index, backgroud, ElementList, DesignList, Tag):
+            ElementList[i]
+            
+            return index+1, _backgroud, ElementList, _DesignList, Tag
+            
+        with tf.variable_scope('redesign_network'):
+            '''
             
         with tf.variable_scope('design_feature_network'):
             COLLECTIONS = ['COV_NETWORK_VARIABLES', tf.GraphKeys.GLOBAL_VARIABLES]
@@ -310,15 +329,10 @@ class DRN:
             Writer.add_summary(summary, LearnStepCounter)
             LearnStepCounter += 1
             print('Train Loss:',Loss)
-            print('TestLoss:', self.TestLoss())
             
             if (LearnStepCounter + 1)  % SaveTimes == 0:
                 self._write_data()
-                Scores = self.GetScore(DataSet['Imgs'])
-                for i in range(len(Scores)):
-                    print(Scores[i])
-                    print(self.GetScore(DataSet['Imgs'][i]))
-                    print(DataSet['Labels'][i])
+                print('TestLoss:', self.TestLoss())
         return
         
     def ReDesign(self, ElementList):

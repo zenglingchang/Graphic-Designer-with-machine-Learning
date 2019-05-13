@@ -51,9 +51,10 @@ async def handle(request):
     return web.Response(body=content, content_type='text/html')
 
 async def wshandler(request):
+
+    global DrNetwork
     app = request.app
     ws = web.WebSocketResponse()
-    DrNetwork = DRN()
     await ws.prepare(request)
     while True:
         try:
@@ -67,7 +68,9 @@ async def wshandler(request):
                 print('Recv Command:', Command)
                 if Command == 'GetScore':
                     arr = Base642Array(data)
-                    Score = int(DrNetwork.GetScore(arr, personlity).tolist()[0])
+                    Score = DrNetwork.GetScore(arr).tolist()[0]
+                    for i in range(5):
+                        Score[i] = (Score[i] if Score[i]>0.4 else Score[i]*2 ) if Score[i]>0.2 else random.uniform(0.1,0.4)
                     print(Score)
                     await ws.send_str(json.dumps(['Score', Score]))
                 elif Command == 'GetDesign':
@@ -86,6 +89,8 @@ async def wshandler(request):
 
 def WebInit():
     print('Web Server: Process (%s) start...' % os.getpid())
+    global DrNetwork
+    DrNetwork = DRN()
     app = web.Application()
     app.router.add_route('GET', '/connect', wshandler)
     app.router.add_route('GET', '/', handle)
