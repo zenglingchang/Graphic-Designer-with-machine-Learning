@@ -616,8 +616,9 @@ function GetElementList(){
     	$('#CanvasBuffer')[0].width = CanvasWidth;
     	$('#CanvasBuffer')[0].height = CanvasHeight;
     	ctx.clearRect (0, 0, CanvasWidth, CanvasHeight);
- 		ctx.drawImage(e.content, 0, 0, CanvasWidth, CanvasHeight);
-		List.push($('#CanvasBuffer')[0].toDataURL());
+ 		ctx.drawImage(e.content, 0, 0, e.width, e.width);
+		List.push([$('#CanvasBuffer')[0].toDataURL(), [e.width*(192/CanvasWidth),e.height*(256/CanvasHeight)]]);
 	})
+    console.log(List)
 	return List;
 }

@@ -77,9 +77,8 @@ class DRN:
             
         if os.path.isfile(os.path.join(sys.path[0], r'my_net/checkpoint')):
             self._load_data()
-        else:
-            self.sess.run(tf.global_variables_initializer())
-            print('NetWork init!')
+        self.sess.run(tf.global_variables_initializer())
+        print('NetWork init!')
         
     def _load_data(self):
         Saver = tf.train.Saver()
@@ -109,13 +108,13 @@ class DRN:
         #---------------------------------Design Feature Network----------------------------
         self.Imgs = tf.placeholder(tf.float32, [None, None], name='Imgs')
         self.Labels = tf.placeholder(tf.float32, [None, 5], name='Labels')
-        '''
+        
         self.backgroud = tf.placeholder(tf.float32, [192*256*3], name='backgroud')
         self.ElementList = tf.placeholder(tf.float32, [None, 192*256*4], name='ElementList')
+        self.ElementSize = tf.placeholder(tf.float32, [None, 2], name='ElementSize')
         self.Tags = tf.placeholder(tf.float32,[None, 5], name='Tags')
-        def paste(backgroud, element, Design):
-            width = tf.shape(element)[0]
-            height = tf.shape(element)[1]
+        def paste(backgroud, element, Design, Size):
+            _element = element[:Size[0],:Size[1]]
             dx = tf.cond(tf.ceil(Design[0]*192) + width < 192, tf.ceil(Design[0]*192) ,lambda: 192-width)
             dy =  tf.cond(tf.ceil(Design[1]*256) + height < 256, tf.ceil(Design[1]*256) , lambda: 256-height)
             tf.equal(tf.pad(x,[[0,3],[2,4]],"CONSTANT"),0)
@@ -130,7 +129,7 @@ class DRN:
             return index+1, _backgroud, ElementList, _DesignList, Tag
             
         with tf.variable_scope('redesign_network'):
-            '''
+            
             
         with tf.variable_scope('design_feature_network'):
             COLLECTIONS = ['COV_NETWORK_VARIABLES', tf.GraphKeys.GLOBAL_VARIABLES]
@@ -138,7 +137,7 @@ class DRN:
             # Hidden layer 1 conv : [192 x 256]x3 --> [192 x 256]x64
             with tf.variable_scope('Cov1') as variable_scope:
                 w_conv = tf.get_variable('w1', regularizer=l2_reg, initializer=weight_variable([3,3,3,64]), collections=COLLECTIONS)
-                Input = tf.reshape(self.Imgs, [-1,192,256,3])
+                Input = tf.reshape(self.Imgs, [-1,256,192,3])
                 temp = conv2d(Input, w_conv)
                 temp = batch_normal(temp, self.is_training)
                 op_conv1 = leaky_relu(temp)
