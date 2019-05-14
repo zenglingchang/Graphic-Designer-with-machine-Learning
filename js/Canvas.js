@@ -345,7 +345,7 @@ function DrawElementToolbar(){
 		$('#element-toolbar').css('visibility', 'hidden');
 		return ;
 	}
-	pos = CanvasToWindow(CanvasX + CenterenderList[ChooseIndex].x - 50, CanvasY + CenterenderList[ChooseIndex].y);
+	pos = CanvasToWindow(CanvasX + RenderList[ChooseIndex].x - 50, CanvasY + RenderList[ChooseIndex].y);
 	$('#element-toolbar').css('marginLeft', pos.x);
 	$('#element-toolbar').css('marginTop', pos.y);
 	$('#element-toolbar').css('visibility', '');

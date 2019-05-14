@@ -69,8 +69,9 @@ async def wshandler(request):
                 if Command == 'GetScore':
                     arr = Base642Array(data)
                     Score = DrNetwork.GetScore(arr).tolist()[0]
+                    print(Score)
                     for i in range(5):
-                        Score[i] = (Score[i] if Score[i]>0.4 else Score[i]*2 ) if Score[i]>0.2 else random.uniform(0.1,0.4)
+                        Score[i] = (Score[i] if Score[i]>0.15 else Score[i]*2 ) if Score[i]>0.15 else random.uniform(0.1,0.3)
                     print(Score)
                     await ws.send_str(json.dumps(['Score', Score]))
                 elif Command == 'GetDesign':

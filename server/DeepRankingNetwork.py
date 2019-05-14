@@ -114,10 +114,13 @@ class DRN:
         self.ElementList = tf.placeholder(tf.float32, [None, 192*256*4], name='ElementList')
         self.Tags = tf.placeholder(tf.float32,[None, 5], name='Tags')
         def paste(backgroud, element, Design):
-            dx = tf.ceil(Design[0])
-            dy = Design[2]
+            width = tf.shape(element)[0]
+            height = tf.shape(element)[1]
+            dx = tf.cond(tf.ceil(Design[0]*192) + width < 192, tf.ceil(Design[0]*192) ,lambda: 192-width)
+            dy =  tf.cond(tf.ceil(Design[1]*256) + height < 256, tf.ceil(Design[1]*256) , lambda: 256-height)
             tf.equal(tf.pad(x,[[0,3],[2,4]],"CONSTANT"),0)
             tf.where
+        
         def con(index, backgroud, ElementList, DesignList, Tag):
             return index<tf.shape(ElementList)[0]
         
@@ -383,7 +386,7 @@ if __name__ == '__main__':
             DataSet = LoadingTrainingData()
             drNetWork._GetLayerOut(DataSet['Imgs'], DataSet['Labels'])
         elif Input == 'GetScore':
-            DataSet = LoadingTestingData()
+            DataSet = LoadingTrainingData()
             #Scores = drNetWork.GetScore(DataSet['Imgs'][ShuffleList[:10],:])    
             Scores = drNetWork.GetScore(DataSet['Imgs'])              
             for i in range(len(DataSet['Imgs'])):        
