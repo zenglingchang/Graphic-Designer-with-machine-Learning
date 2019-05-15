@@ -390,7 +390,7 @@ class DRN:
         img = img.reshape([256,192,3])
         for i in np.arange(0,256,8):
             for j in range(0,192,8):
-                Y0,Y1,X0,X1 = [max(i-16,0), min(i+16,256), max(j-16,0), min(j+16,256)]
+                Y0,Y1,X0,X1 = [max(i-24,0), min(i+24,256), max(j-24,0), min(j+24,256)]
                 _Img = copy.deepcopy(img)
                 _Img[Y0:Y1, X0:X1, :] = 100
                 _Score = self.sess.run(self.Score, feed_dict={ 
@@ -496,6 +496,8 @@ if __name__ == '__main__':
             drNetWork.GetFeatureMap(DataSet['Imgs'][5])
         elif Input == 'GetSensetiveMap':
             DataSet = LoadingTrainingData()
+            im=Image.fromarray(DataSet['Imgs'][5].reshape(256,192,3))
+            im.show()
             drNetWork.DrawSensetiveMap(DataSet['Imgs'][5])
         else:
             print('Can\'t find Command: %s ' % Input)
