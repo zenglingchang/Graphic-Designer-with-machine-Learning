@@ -4,6 +4,7 @@ from ImgDeal import *
 import tensorflow as tf
 #from skimage import exposure
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 from tensorflow.python.ops import control_flow_ops
 from tensorflow.python.training import moving_averages
 
@@ -103,7 +104,7 @@ class DRN:
             
         if os.path.isfile(os.path.join(sys.path[0], r'my_net/checkpoint')):
             self._load_data()
-        self.sess.run(tf.global_variables_initializer())
+       # self.sess.run(tf.global_variables_initializer())
         print('NetWork init!')
         
     def _load_data(self):
@@ -235,25 +236,29 @@ class DRN:
                 h_fc1 = tf.nn.dropout(leaky_relu(tf.matmul(h_pool4_flat, w_fc1) + b_fc1), self.keep_prob)
         
         with tf.variable_scope('unconv_unpool_network'):
+            self.LayerFeatureShow = []
             LayerFeature = tf.reshape(op_pool4[self.GetFeatureIndex,:,:,:,], [1,4,3,64])
             with tf.variable_scope('unconv3') as variable_scope:
                 unpool4 = un_max_pool(LayerFeature,  tf.reshape(pool_mask4[self.GetFeatureIndex,:,:,:,], [1,4,3,64]), 4)
-                temp = leaky_relu(unpool4)
+                temp = tf.nn.relu(unpool4)
                 print(temp.get_shape())
                 unconv4 = unconv(temp, w_conv4, [1, 16, 12, 64])
+                self.LayerFeatureShow.append(tf.reshape(unconv4, [16,12,64]))
                 
             with tf.variable_scope('unconv2') as variable_scope:
                 unpool2 = un_max_pool(unconv4, tf.reshape(pool_mask3[self.GetFeatureIndex,:,:,:,], [1,16,12,64]), 4)
-                temp = leaky_relu(unpool2)
+                temp = tf.nn.relu(unpool2)
                 unconv3 = unconv(temp, w_conv3, [1, 64, 48, 64])
+                self.LayerFeatureShow.append(tf.reshape(unconv3, [64,48,64]))
                 
             with tf.variable_scope('unconv1') as variable_scope:
                 unpool3 = un_max_pool(unconv3, tf.reshape(pool_mask2[self.GetFeatureIndex,:,:,:,], [1,64,48,64]), 4)
-                temp = leaky_relu(unpool3)
+                temp = tf.nn.relu(unpool3)
                 unconv2 = unconv(temp, w_conv2, [1, 256, 192, 64])  
+                self.LayerFeatureShow.append(tf.reshape(unconv2, [256,192,64]))
                 
             with tf.variable_scope('output') as variable_scope:
-                temp = leaky_relu(unconv2)
+                temp = tf.nn.relu(unconv2)
                 self.FeatureMap = tf.reshape(unconv(temp, w_conv1, [1, 256, 192, 3]), [256,192,3])  
             
             
@@ -328,26 +333,84 @@ class DRN:
             
     def GetFeatureMap(self, Imgs, Index = 0):
         Imgs = Imgs.reshape([-1,256*192*3])
-        FeatureMap = self.sess.run(self.FeatureMap, feed_dict = {
+        FeatureMap, LayerFeatureList = self.sess.run([self.FeatureMap, self.LayerFeatureShow], feed_dict = {
                                                     self.Imgs: Imgs,
                                                     self.keep_prob: 1.0,
                                                     self.is_training: False,
                                                     self.GetFeatureIndex: Index
                                                     })
+        for LayerFeature in LayerFeatureList:
+            for index in range(LayerFeature.shape[2]):
+                feature = LayerFeature[:,:,index]
+                length,min = feature.max() - feature.min(),feature.min()
+                for i in range(len(feature)):
+                    for j in range(len(feature[i])):
+                        feature[i][j] = int((feature[i][j] - min)/length*255)
+                plt.subplot(8,8,index+1)
+                plt.imshow(feature, plt.cm.gray)
+            plt.show()
+            
+        # hist remove some point
         _FeatureMap = np.mean(FeatureMap, axis = -1)
-        print(np.min(_FeatureMap), np.max(_FeatureMap))
+        hist = np.histogram(_FeatureMap, bins=100)
+        num = 0
+        min = None
+        max = None
+        for i in range(len(hist[0])):
+            num += hist[0][i]
+            print(num)
+            if num > 300:
+                min = hist[1][i]
+                break
+        num = 0
+        for i in range(len(hist[0])):
+            num += hist[0][len(hist[0]) - i - 1]
+            if num > 300:
+                max = hist[1][len(hist[0]) - i - 1]
+                break
+        _FeatureMap = np.maximum(_FeatureMap, min)
+        _FeatureMap = np.minimum(_FeatureMap, max)
         _FeatureMap += np.min(_FeatureMap)
         _FeatureMap /= np.max(_FeatureMap)
-        plt.matshow(_FeatureMap)
+        plt.matshow(_FeatureMap, cmap='YlOrRd',interpolation='nearest')
+        plt.colorbar()
         plt.show()
         return FeatureMap
         
-    def GetScore(self, img, is_training = False):
+    def DrawSensetiveMap(self, img):
+        def square_error(A, B):
+            return np.sum(np.square(A-B))
+            
+        SensetiveMap = np.array([[0.0 for col in range(192) ] for row in range(256)])
+        Score = self.sess.run(self.Score, feed_dict={ 
+                                    self.Imgs: img.reshape([-1,256*192*3]),
+                                    self.keep_prob: 1.0,
+                                    self.is_training: False
+                                   })[0]
+        img = img.reshape([256,192,3])
+        for i in np.arange(0,256,8):
+            for j in range(0,192,8):
+                Y0,Y1,X0,X1 = [max(i-16,0), min(i+16,256), max(j-16,0), min(j+16,256)]
+                _Img = copy.deepcopy(img)
+                _Img[Y0:Y1, X0:X1, :] = 100
+                _Score = self.sess.run(self.Score, feed_dict={ 
+                                        self.Imgs: _Img.reshape([-1,256*192*3]),
+                                        self.keep_prob: 1.0,
+                                        self.is_training: False
+                                       })[0]
+                print(i,j,_Score)
+                SensetiveMap[Y0:Y1, X0:X1] += square_error(_Score,Score)
+        SensetiveMap /= np.max(SensetiveMap)
+        plt.matshow(SensetiveMap, cmap='YlOrRd',interpolation='nearest')
+        plt.colorbar()
+        plt.show()
+        
+    def GetScore(self, img):
         Imgs = img.reshape([-1,256*192*3])
         return np.array(self.sess.run(self.Score, feed_dict={ 
                                                         self.Imgs: Imgs,
                                                         self.keep_prob: 1.0,
-                                                        self.is_training: is_training
+                                                        self.is_training: False
                                                        }))
     
     def Train(self, Times, SaveTimes = 10, keep_prob = 0.5, is_training = True):
@@ -430,6 +493,9 @@ if __name__ == '__main__':
                 print('index:',i,Scores[i] - DataSet['Labels'][i])
         elif Input == 'GetFeatureMap':
             DataSet = LoadingTrainingData()
-            drNetWork.GetFeatureMap(DataSet['Imgs'][0])
+            drNetWork.GetFeatureMap(DataSet['Imgs'][5])
+        elif Input == 'GetSensetiveMap':
+            DataSet = LoadingTrainingData()
+            drNetWork.DrawSensetiveMap(DataSet['Imgs'][5])
         else:
             print('Can\'t find Command: %s ' % Input)
