@@ -254,7 +254,7 @@ class DRN:
                 
             with tf.variable_scope('output') as variable_scope:
                 temp = leaky_relu(unconv2)
-                self.FeatureMap = unconv(temp, w_conv1, [1, 256, 192, 3])  
+                self.FeatureMap = tf.reshape(unconv(temp, w_conv1, [1, 256, 192, 3]), [256,192,3])  
             
             
         with tf.variable_scope('semantic_scoring_network'):
@@ -334,6 +334,12 @@ class DRN:
                                                     self.is_training: False,
                                                     self.GetFeatureIndex: Index
                                                     })
+        _FeatureMap = np.mean(FeatureMap, axis = -1)
+        print(np.min(_FeatureMap), np.max(_FeatureMap))
+        _FeatureMap += np.min(_FeatureMap)
+        _FeatureMap /= np.max(_FeatureMap)
+        plt.matshow(_FeatureMap)
+        plt.show()
         return FeatureMap
         
     def GetScore(self, img, is_training = False):
@@ -422,6 +428,8 @@ if __name__ == '__main__':
             Scores = drNetWork.GetScore(DataSet['Imgs'])              
             for i in range(len(DataSet['Imgs'])):        
                 print('index:',i,Scores[i] - DataSet['Labels'][i])
-
+        elif Input == 'GetFeatureMap':
+            DataSet = LoadingTrainingData()
+            drNetWork.GetFeatureMap(DataSet['Imgs'][0])
         else:
             print('Can\'t find Command: %s ' % Input)
