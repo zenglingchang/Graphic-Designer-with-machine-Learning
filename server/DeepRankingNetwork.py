@@ -148,14 +148,20 @@ class DRN:
         # unpool and unconv network input
         self.GetFeatureIndex = tf.placeholder(tf.int64, name='Keep_Prob')   
         #--------------------------------- Re-Design Network ----------------------------
-        '''
-        def paste(backgroud, element, Design, Size):
-            _element = element[:Size[0],:Size[1]]
-            dx = tf.cond(tf.ceil(Design[0]*192) + width < 192, tf.ceil(Design[0]*192) ,lambda: 192-width)
-            dy =  tf.cond(tf.ceil(Design[1]*256) + height < 256, tf.ceil(Design[1]*256) , lambda: 256-height)
-            tf.equal(tf.pad(x,[[0,3],[2,4]],"CONSTANT"),0)
-            tf.where
         
+        def paste(backgroud, element, Design, Size):
+            print(element.shape)
+            _element = element[:Size[0],:Size[1],:]
+            print(_element.shape)
+            dx = tf.cond(tf.ceil(Design[0]*192) + Size[1] < 192, lambda: tf.cast(tf.ceil(Design[0]*192), tf.int32) ,lambda: 192 - Size[1])
+            dy =  tf.cond(tf.ceil(Design[1]*256) + Size[0] < 256, lambda: tf.cast((tf.ceil(Design[1]*256)), tf.int32) , lambda: 256 - Size[0])
+            print(dx.get_shape(),dy.get_shape())
+            _element = tf.pad(_element,[[dy, 256 - dy - Size[0]],[dx,192-dx-Size[1]],[0,0]], "CONSTANT")
+            mask = tf.equal(_element[:,:,3],0.5)
+            mask = tf.tile(tf.reshape(mask, [256,192,1]), [1,1,3])
+            _backgroud = tf.where(mask, tf.multiply(_element[:,:,0:3], tf.tile(tf.reshape(_element[:,:,3], [256,192,1]), [1,1,3])), backgroud)
+            return _backgroud
+        '''
         def con(index, backgroud, ElementList, DesignList, Tag):
             return index<tf.shape(ElementList)[0]
         
