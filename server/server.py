@@ -25,6 +25,7 @@ def help():
     content = '''Command:
         -help  | help infomation
         -show  | Show network frameWork
+        -train | training network 
         -exit  | exit!
     '''
     print(content)
@@ -78,7 +79,7 @@ async def wshandler(request):
                     ElementList = []
                     personlity = data[0]
                     for i in range(1, len(data)):
-                        img = Base642Img(data[i], 'RGBA')
+                        img = Base642Img(data[i][0], 'RGBA')
                         ElementList.append(img)
                     DesList = DrNetwork.ReDesign(ElementList)
                     

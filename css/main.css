@@ -73,14 +73,20 @@ html, body {
     margin-left:5%;
 }
 
+#GetSensitiveMap{
+    width: 40%;
+    margin-top:10%;
+    margin-left:30%;
+}
+
 #PerChoose{
     width: 50%;
-    margin-top:20%;
+    margin-top:10%;
     margin-left:10%;
 }
 
 #ReDesign{
-    margin-top:20%;
+    margin-top:10%;
     margin-left:5%;
     position:absolute;
 }

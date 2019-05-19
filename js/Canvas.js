@@ -356,6 +356,7 @@ function DrawElementToolbar(){
 function DrawScore(ScoreList){
     dict = ['cute', 'terror', 'fashion', 'business','festive']
     ctx = $('#ScoreCanvas')[0].getContext("2d");
+    ctx.clearRect (0, 0, $('#ScoreCanvas')[0].height, $('#ScoreCanvas')[0].height);
     R = $('#ScoreCanvas')[0].height/2 - 25;
     Center = $('#ScoreCanvas')[0].height/2;
     //draw backgroud

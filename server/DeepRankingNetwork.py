@@ -2,8 +2,9 @@ import os,sys,time
 import numpy as np
 from ImgDeal import *
 import tensorflow as tf
-#from skimage import exposure
+from skimage import exposure
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.colors import LinearSegmentedColormap
 from tensorflow.python.ops import control_flow_ops
 from tensorflow.python.training import moving_averages
@@ -150,7 +151,6 @@ class DRN:
         #--------------------------------- Re-Design Network ----------------------------
         
         def paste(backgroud, element, Design, Size):
-            print(element.shape)
             _element = element[:Size[0],:Size[1],:]
             print(_element.shape)
             dx = tf.cond(tf.ceil(Design[0]*192) + Size[1] < 192, lambda: tf.cast(tf.ceil(Design[0]*192), tf.int32) ,lambda: 192 - Size[1])
@@ -247,7 +247,6 @@ class DRN:
             with tf.variable_scope('unconv3') as variable_scope:
                 unpool4 = un_max_pool(LayerFeature,  tf.reshape(pool_mask4[self.GetFeatureIndex,:,:,:,], [1,4,3,64]), 4)
                 temp = tf.nn.relu(unpool4)
-                print(temp.get_shape())
                 unconv4 = unconv(temp, w_conv4, [1, 16, 12, 64])
                 self.LayerFeatureShow.append(tf.reshape(unconv4, [16,12,64]))
                 
@@ -352,8 +351,10 @@ class DRN:
                 for i in range(len(feature)):
                     for j in range(len(feature[i])):
                         feature[i][j] = int((feature[i][j] - min)/length*255)
-                plt.subplot(8,8,index+1)
+                plt.subplot(6,11,index+1)
                 plt.imshow(feature, plt.cm.gray)
+                plt.xticks([])
+                plt.yticks([])
             plt.show()
             
         # hist remove some point
@@ -364,7 +365,6 @@ class DRN:
         max = None
         for i in range(len(hist[0])):
             num += hist[0][i]
-            print(num)
             if num > 300:
                 min = hist[1][i]
                 break
@@ -380,13 +380,15 @@ class DRN:
         _FeatureMap /= np.max(_FeatureMap)
         plt.matshow(_FeatureMap, cmap='YlOrRd',interpolation='nearest')
         plt.colorbar()
+        plt.xticks([])
+        plt.yticks([])
         plt.show()
         return FeatureMap
         
     def DrawSensetiveMap(self, img):
         def square_error(A, B):
             return np.sum(np.square(A-B))
-            
+                    
         SensetiveMap = np.array([[0.0 for col in range(192) ] for row in range(256)])
         Score = self.sess.run(self.Score, feed_dict={ 
                                     self.Imgs: img.reshape([-1,256*192*3]),
@@ -395,21 +397,28 @@ class DRN:
                                    })[0]
         img = img.reshape([256,192,3])
         for i in np.arange(0,256,8):
+            _Imgs = []
+            locations = []
             for j in range(0,192,8):
                 Y0,Y1,X0,X1 = [max(i-24,0), min(i+24,256), max(j-24,0), min(j+24,256)]
                 _Img = copy.deepcopy(img)
                 _Img[Y0:Y1, X0:X1, :] = 100
-                _Score = self.sess.run(self.Score, feed_dict={ 
-                                        self.Imgs: _Img.reshape([-1,256*192*3]),
-                                        self.keep_prob: 1.0,
-                                        self.is_training: False
-                                       })[0]
-                print(i,j,_Score)
-                SensetiveMap[Y0:Y1, X0:X1] += square_error(_Score,Score)
+                locations.append([Y0,Y1,X0,X1])
+                _Imgs.append(_Img.reshape([256*192*3]))
+            Scores = self.sess.run(self.Score, feed_dict={ 
+                                    self.Imgs: _Imgs,
+                                    self.keep_prob: 1.0,
+                                    self.is_training: False
+                                   })
+            for index in range(len(Scores)):
+                SensetiveMap[locations[index][0]:locations[index][1], locations[index][2]:locations[index][3]] += square_error(Scores[index],Score)
+            print("\rGenerate:%.1f%%"%((i+8)*100/256),end= " ")
+        print(' ')
         SensetiveMap /= np.max(SensetiveMap)
-        plt.matshow(SensetiveMap, cmap='YlOrRd',interpolation='nearest')
-        plt.colorbar()
-        plt.show()
+        #plt.matshow(SensetiveMap, cmap='YlOrRd',interpolation='nearest')
+        #plt.colorbar()
+        #plt.show()
+        return SensetiveMap
         
     def GetScore(self, img):
         Imgs = img.reshape([-1,256*192*3])
@@ -448,16 +457,26 @@ class DRN:
         DesignList = [[0.0,0.0,1.0,1.0]]
         for i in range(1,len(ElementList)):
             DesignList.append([0,0,0.4,0.5])
-        X = np.arange(0,1,0.001)
-        Y = []
-        for i in np.arange(0,1,0.001):
-            DesignList[1][0] = i
-            Img = GetDesginImg(ElementList, DesignList)
-            Y.append(self.GetScore(Img2Array(Img)))
-        Y=np.array(Y)
-        Y = Y[:,0]
-        print(Y)
-        plt.plot(X,Y[:,0].tolist())
+        Z = []
+        for i in np.arange(0,1,0.02):
+            temp = []
+            for j in np.arange(0,1,0.02):
+                DesignList[1][0] = i
+                DesignList[1][1] = j
+                Img = GetDesginImg(ElementList, DesignList)        
+                temp.append(self.GetScore(Img2Array(Img))[0])
+            Z.append(temp)
+            print(i)
+        Z=np.array(Z)
+        print(Z.shape)
+        X = np.arange(0,1,0.02)
+        Y = np.arange(0,1,0.02)
+        X, Y = np.meshgrid(X, Y)
+        fig = plt.figure()
+        for i in range(5):
+            ax = fig.add_subplot(2,3,i+1, projection='3d')
+            _Z = Z[:,:,i]
+            ax.plot_surface(X, Y, _Z, rstride=1, cstride=1, cmap='rainbow')
         plt.show()
         return DesignList
         
@@ -492,18 +511,31 @@ if __name__ == '__main__':
             DataSet = LoadingTrainingData()
             drNetWork._GetLayerOut(DataSet['Imgs'], DataSet['Labels'])
         elif Input == 'GetScore':
-            DataSet = LoadingTrainingData()
+            DataSet = LoadingTempData()
             #Scores = drNetWork.GetScore(DataSet['Imgs'][ShuffleList[:10],:])    
             Scores = drNetWork.GetScore(DataSet['Imgs'])              
             for i in range(len(DataSet['Imgs'])):        
-                print('index:',i,Scores[i] - DataSet['Labels'][i])
+                print('index:',i,Scores[i])
         elif Input == 'GetFeatureMap':
             DataSet = LoadingTrainingData()
-            drNetWork.GetFeatureMap(DataSet['Imgs'][5])
-        elif Input == 'GetSensetiveMap':
-            DataSet = LoadingTrainingData()
-            im=Image.fromarray(DataSet['Imgs'][5].reshape(256,192,3))
+            im=Image.fromarray(DataSet['Imgs'][35].reshape(256,192,3))
             im.show()
-            drNetWork.DrawSensetiveMap(DataSet['Imgs'][5])
+            drNetWork.GetFeatureMap(DataSet['Imgs'][35])
+        elif Input == 'GetSensetiveMap':
+            DataSet = LoadingTempData()
+            for i in range(len(DataSet['Imgs'])):
+                print(i)
+                SensetiveMap = drNetWork.DrawSensetiveMap(DataSet['Imgs'][i])
+                fig = plt.figure()
+                ax = fig.add_subplot(121)
+                ax.imshow(DataSet['Imgs'][i].reshape(256,192,3))
+                plt.xticks([])
+                plt.yticks([])
+                bx = fig.add_subplot(122)
+                temp = bx.matshow(SensetiveMap, cmap='YlOrRd',interpolation='nearest')
+                plt.xticks([])
+                plt.yticks([])
+                plt.savefig(os.path.join(r'D:\graduation_word\Img',str(i)+"x_.png"))
+                plt.close()
         else:
             print('Can\'t find Command: %s ' % Input)

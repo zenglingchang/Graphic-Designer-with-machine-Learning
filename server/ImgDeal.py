@@ -28,7 +28,7 @@ def Base642Img(base64Data, type = 'RGB'):
     
 def Img2Array(Img, type = 'RGB'):
     Img = Img.convert(type)
-    TempArray = np.array(Img)
+    TempArray = np.array(Img.resize((192,256), Image.ANTIALIAS))
     return TempArray
     
 def GetDesginImg(ElementList, DesignList):
@@ -46,7 +46,7 @@ def LoadingTrainingData():
     ImgTrainingPath = os.path.join(sys.path[0], r'data/train')
     dict = {
         "Labels": [],
-        "Imgs" : []
+        "Imgs" : [],
     }
     for Dir in os.listdir(ImgTrainingPath):
         Label = [ 1 if i == PersonDict[Dir] else 0 for i in range(0,5)]
@@ -73,6 +73,20 @@ def LoadingTestingData():
             dict['Labels'].append(Label)
     dict['Imgs'] = np.array(dict['Imgs'])
     dict['Labels'] = np.array(dict['Labels'])
+    return dict
+    
+def LoadingTempData():
+    ImgTestingPath = os.path.join(sys.path[0], r'data\TestSensetiveMap')
+    dict = {
+        "Labels": [],
+        "Imgs" : []
+    }
+    for Img in os.listdir(ImgTestingPath):
+        ImgSrc = os.path.join(ImgTestingPath, Img)
+        dict['Imgs'].append(Img2Array(Image.open(ImgSrc)).reshape([256*192*3]))
+        print(Img)
+    dict['Imgs'] = np.array(dict['Imgs'])
+    print(len(dict['Imgs']))
     return dict
     
 def ClearDataSet():
