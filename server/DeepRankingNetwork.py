@@ -143,38 +143,100 @@ class DRN:
         # re-design network input
         self.backgroud = tf.placeholder(tf.float32, [192*256*3], name='backgroud')
         self.ElementList = tf.placeholder(tf.float32, [None, 192*256*4], name='ElementList')
-        self.ElementSize = tf.placeholder(tf.float32, [None, 2], name='ElementSize')
         self.Tags = tf.placeholder(tf.float32,[None, 5], name='Tags')
         
         # unpool and unconv network input
-        self.GetFeatureIndex = tf.placeholder(tf.int64, name='Keep_Prob')   
+        self.GetFeatureIndex = tf.placeholder(tf.int64, name='FeatureIndex')   
         #--------------------------------- Re-Design Network ----------------------------
+        def Conv(Input, shape, MaxPool = True):
+            w = tf.get_variable('w', initializer=weight_variable(shape))
+            output = conv2d(Input, w)
+            output = leaky_relu(output)
+            if MaxPool:
+                output = max_pool_4x4(output)
+            return output
+            
+        def FN(Input, Shape, UseDropOut = False):
+            w = tf.get_variable('w', regularizer=l2_reg, initializer=weight_variable(Shape), collections=COLLECTIONS)
+            b = tf.get_variable('b', regularizer=l2_reg, initializer=bias_variable([Shape[1]], 0.5), collections=COLLECTIONS)
+            if UseDropOut:
+                return tf.nn.dropout(leaky_relu(tf.matmul(Input, w) + b), self.keep_prob)
+            else:
+                return leaky_relu(tf.matmul(Input, w) + b)
+            
+        def ElementNetwork(Input):
+            # input shape:[1,256,192,4], output shape: [1,256]
+            Input = tf.reshape(Input, [-1,256,192,4])
+            with tf.variable_scope('Element_feature_network'):
+                #(NameScope, Shape, use_4x4_Pooling)
+                for ConvLayer in [('conv1', [3,3,4,64], False), ('conv2', [3,3,64,64], True), ('conv3', [3,3,64,64], True), ('conv4', [3,3,64,64], True)]:
+                    with tf.variable_scope(ConvLayer[0]) as variable_scope:
+                        Input = Conv(Input, ConvLayer[1], ConvLayer[2])
+                Input = tf.reshape(Input, [-1,3*4*64])
+                with tf.variable_scope('Output') as variable_scope:
+                    output = FN(Input, [3*4*64, 256],True)
+            return output
+            
+        def BackgroundNetwork(Input):
+            # input shape:[1,256,192,3], output shape: [1,256]
+            Input = tf.reshape(Input, [-1,256,192,3])
+            with tf.variable_scope('Background_feature_network'):
+                #(NameScope, Shape, use_4x4_Pooling)
+                for ConvLayer in [('conv1', [3,3,3,64], False), ('conv2', [3,3,64,64], True), ('conv3', [3,3,64,64], True), ('conv4', [3,3,64,64], True)]:
+                    with tf.variable_scope(ConvLayer[0]) as variable_scope:
+                        Input = Conv(Input, ConvLayer[1], ConvLayer[2])
+                Input = tf.reshape(Input, [-1,3*4*64])
+                with tf.variable_scope('Output') as variable_scope:
+                    output = FN(Input, [3*4*64, 256],True)
+            return output
+            
+        def LabelNetwork(Input):
+            # input shape:[1,5], output shape: [1,64]
+            Input = tf.reshape(Input, [-1,5])
+            with tf.variable_scope('Label_segmantic_network'):
+                for FnLayer in [('input', [5,64], False), ('Output', [64,64], True)]:
+                    with tf.variable_scope(FnLayer[0]) as variable_scope:
+                        Input = FN(Input, FnLayer[1],  FnLayer[2])
+            return Input
         
-        def paste(backgroud, element, Design, Size):
-            _element = element[:Size[0],:Size[1],:]
-            print(_element.shape)
-            dx = tf.cond(tf.ceil(Design[0]*192) + Size[1] < 192, lambda: tf.cast(tf.ceil(Design[0]*192), tf.int32) ,lambda: 192 - Size[1])
-            dy =  tf.cond(tf.ceil(Design[1]*256) + Size[0] < 256, lambda: tf.cast((tf.ceil(Design[1]*256)), tf.int32) , lambda: 256 - Size[0])
+        def DesignNetwork(Label, Element, Background):
+            # input shape:[1,256],[1,256],[1,64], output shape: [1,4]
+            input = tf.concat([Label, Element, Background], 1)
+            with tf.variable_scope('Design_network'):
+                for FnLayer in [('FN1', [576,1024], True), ('FN2', [1024,256], True), ('Output', [256,4], True)]:
+                    with tf.variable_scope(FnLayer[0]) as variable_scope:
+                        Input = FN(Input, FnLayer[1],  FnLayer[2])
+                output = tf.math.sigmoid(Input)[0]
+            return output
+            
+        def paste(backgroud, element, Design):
+            _element = tf.image.resize_images( element, [tf.cast((tf.ceil(Design[0]*256)), tf.int32), tf.cast(tf.ceil(Design[1]*192), tf.int32)])
+            print(_element.get_shape())
+            ElementSize = tf.shape(_element)
+            print(ElementSize)
+            dy =  tf.cond(tf.cast(tf.ceil(Design[2]*256), tf.int32) + ElementSize[0] < 256, lambda: tf.cast((tf.ceil(Design[2]*256)), tf.int32) , lambda: 256 - ElementSize[0])
+            dx = tf.cond(tf.cast(tf.ceil(Design[3]*192), tf.int32) + ElementSize[1] < 192, lambda: tf.cast(tf.ceil(Design[3]*192), tf.int32) ,lambda: 192 - ElementSize[1])
             print(dx.get_shape(),dy.get_shape())
-            _element = tf.pad(_element,[[dy, 256 - dy - Size[0]],[dx,192-dx-Size[1]],[0,0]], "CONSTANT")
-            mask = tf.equal(_element[:,:,3],0.5)
-            mask = tf.tile(tf.reshape(mask, [256,192,1]), [1,1,3])
-            _backgroud = tf.where(mask, tf.multiply(_element[:,:,0:3], tf.tile(tf.reshape(_element[:,:,3], [256,192,1]), [1,1,3])), backgroud)
+            _element = tf.pad(_element,[[dy, 256 - dy - ElementSize[0]],[dx,192-dx-ElementSize[1]],[0,0]], "CONSTANT")
+            mask = tf.tile(_element[:,:,2:3]/255, [1,1,3])
+            backmask = 1 - mask
+            _backgroud = tf.multiply(_element[:,:,0:3], mask) + tf.multiply(backgroud, backmask)
             return _backgroud
-        '''
+            
+        
         def con(index, backgroud, ElementList, DesignList, Tag):
             return index<tf.shape(ElementList)[0]
         
         def body(index, backgroud, ElementList, DesignList, Tag):
-            ElementList[i]
             
+            Design = DesignNetwork(LabelNetwork(Tag), ElementNetwork(ElementList[index]), BackgroundNetwork(backgroud))
+            _backgroud = paste(backgroud, ElementList[index], Design)
+            _DesignList = tf.concat([_DesignList, Design], 0)
             return index+1, _backgroud, ElementList, _DesignList, Tag
             
-        with tf.variable_scope('redesign_network'):
-        '''
-        
+
         #--------------------------------- Design Feature Network ----------------------------
-        
+    
         with tf.variable_scope('design_feature_network'):
             COLLECTIONS = ['COV_NETWORK_VARIABLES', tf.GraphKeys.GLOBAL_VARIABLES]
             
@@ -214,7 +276,6 @@ class DRN:
                 op_conv3 = leaky_relu(temp)
                 op_pool3, pool_mask3 = max_pool_with_argmax(op_conv3, 4)
                 
-                #self.LayerOutput[variable_scope] = tf.transpose(op_pool3, perm=[3,0,1,2])
                 mean, variance = moments(w_conv3)
                 tf.summary.scalar("mean", mean)
                 tf.summary.scalar("variance", variance)
@@ -228,7 +289,6 @@ class DRN:
                 op_conv4 = leaky_relu(temp)
                 op_pool4, pool_mask4= max_pool_with_argmax(op_conv4, 4)
 
-                #self.LayerOutput[variable_scope] = tf.transpose(op_pool4, perm=[3,0,1,2])
                 mean, variance = moments(w_conv4)
                 tf.summary.scalar("mean", mean)
                 tf.summary.scalar("variance", variance)
