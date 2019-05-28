@@ -75,13 +75,19 @@ async def wshandler(request):
                         Score[i] = (Score[i] if Score[i]>0.15 else Score[i]*2 ) if Score[i]>0.15 else random.uniform(0.1,0.3)
                     print(Score)
                     await ws.send_str(json.dumps(['Score', Score]))
+                elif Command == 'GetSensitiveMap':
+                    arr = Base642Array(data)
+                    SensetiveMap = DrNetwork.DrawSensetiveMap(arr)
+                    
                 elif Command == 'GetDesign':
                     ElementList = []
-                    personlity = data[0]
-                    for i in range(1, len(data)):
-                        img = Base642Img(data[i][0], 'RGBA')
+                    personlity = [[1 if i == PersonDict[data[0]] else 0 for i in range(5)]]
+                    background = Base642Array(data[1])
+                    for i in range(2, len(data)):
+                        img = Base642Array(data[i], 'RGBA')
                         ElementList.append(img)
-                    DesList = DrNetwork.ReDesign(ElementList)
+                    ElementList = np.array(ElementList)
+                    DesList = DrNetwork.AutoDesign(background, ElementList, personlity).tolist()
                     
                     await ws.send_str(json.dumps(['Design', DesList]))
         except Exception as e:

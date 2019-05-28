@@ -18,6 +18,11 @@ def Base642Array(base64Data, type = 'RGB'):
     TempArray = np.array(img)
     return TempArray
     
+def ImgFile2Base64(ImgPath):
+    with open(ImgPath, 'rb') as f:
+        base64_data = base64.b64encode(f.read())
+    return 'data:image/png;base64,%s'%base64_data.decode()
+
 def Base642Img(base64Data, type = 'RGB'):
     imgdata = base64.b64decode(base64Data.replace('data:image/png;base64,',''))
     image = io.BytesIO(imgdata)
@@ -104,8 +109,6 @@ if __name__ == '__main__':
     ImgTestPath = os.path.join(ImgRoot, 'test')
     ImgTrainPath = os.path.join(ImgRoot, 'train')
     for Dir in os.listdir(ImgBuffer):
-        os.mkdir(os.path.join(ImgTestPath,Dir))
-        os.mkdir(os.path.join(ImgTrainPath,Dir))
         for Img in os.listdir(os.path.join(ImgBuffer,Dir)):
             ImgSrc = os.path.join(ImgBuffer, Dir, Img)
             ImgDst = os.path.join(ImgTrainPath if random.random() > 0.2 else ImgTestPath, Dir, Img)

@@ -31,13 +31,13 @@ function messageHandler(e){
 		case "Design":
 			DesignList = json[1];
 			console.log('GetDesgin', DesignList.toSource());
-			for(var i = 0; i<RenderList.length; i++){
-				if(i == 0) continue;
-				RenderList[i].x = DesignList[i][0]*CanvasX;
-				RenderList[i].y = DesignList[i][1]*CanvasY;
-				RenderList[i].width = DesignList[i][2]*CanvasWidth;
-				RenderList[i].height = DesignList[i][3]*CanvasHeight;
+			for(var i = 0; i<DesignList.length; i++){
+				RenderList[i+1].height = DesignList[i][0]*CanvasHeight;
+        RenderList[i+1].width = DesignList[i][1]*CanvasWidth;
+        RenderList[i+1].y = Math.min(DesignList[i][2]*CanvasHeight, CanvasHeight - RenderList[i+1].height);
+        RenderList[i+1].x = Math.min(DesignList[i][3]*CanvasWidth, CanvasWidth - RenderList[i+1].width);
 			}
+      console.log('GetDesgin',RenderList);
 			CanvasUpdate();
 			break;
 

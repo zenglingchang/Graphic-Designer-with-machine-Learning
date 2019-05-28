@@ -5,6 +5,9 @@ function Init(){
     document.getElementById('Reset').onclick = function() {
         ResetCanvas();
     }
+	document.getElementById('GetSensitiveMap').onclick = function(){
+		SendImg('GetSensitiveMap',GetCanvasContent());
+	}
 	document.getElementById('GetScore').onclick = function() {
         sendImg('GetScore', GetCanvasContent());
 	};
